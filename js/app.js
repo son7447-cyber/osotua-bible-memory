@@ -3,6 +3,7 @@ const $=id=>document.getElementById(id);
 
 let participants=[],participantMap=new Map();
 let settings=null,currentDay=1,currentContent=null,currentLanguage="maa";
+let currentCoach=null,coachVerse=null,coachDay=1,coachTimerId=null,coachSeconds=30;
 let mediaRecorder=null,stream=null,chunks=[],audioBlob=null,timerId=null,seconds=0;
 let deferredInstallPrompt=null;
 
@@ -32,6 +33,93 @@ function calculatedDay(startDate){
 }
 function newId(){
   return crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+
+function splitLines(text){
+  return (text||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
+}
+function parseWordLine(line){
+  const parts=line.split(/\s*=\s*/);
+  return {word:(parts.shift()||"").trim(),meaning:parts.join(" = ").trim()};
+}
+function populateCoachDays(){
+  $("coachDaySelect").innerHTML=Array.from({length:OSOTUA_CONFIG.totalDays},(_,i)=>i+1)
+    .map(day=>`<option value="${day}">Day ${day}</option>`).join("");
+}
+function updateCoachVisibility(){
+  const pid=$("participantSelect").value;
+  const name=participantMap.get(pid);
+  const visible=name==="SON";
+  $("coachCard").classList.toggle("hidden",!visible);
+  if(visible && !$("coachDaySelect").value){
+    coachDay=Math.min(currentDay,OSOTUA_CONFIG.totalDays);
+    $("coachDaySelect").value=String(coachDay);
+    loadCoachDay(coachDay);
+  }
+}
+async function loadCoachDay(day){
+  coachDay=Number(day);
+  $("coachContent").classList.add("hidden");
+  $("coachAvailability").textContent="Loading coach content…";
+  try{
+    const [coachResult,verseResult]=await Promise.all([
+      sb.from("memory_coach").select("*").eq("day",coachDay).maybeSingle(),
+      sb.from("memory_content").select("day,reference,maa_text").eq("day",coachDay).maybeSingle()
+    ]);
+    if(coachResult.error)throw coachResult.error;
+    if(verseResult.error)throw verseResult.error;
+    currentCoach=coachResult.data;
+    coachVerse=verseResult.data;
+    if(currentCoach)cacheSet(`coach_${coachDay}`,currentCoach);
+    if(coachVerse)cacheSet(`coach_verse_${coachDay}`,coachVerse);
+  }catch(error){
+    currentCoach=cacheGet(`coach_${coachDay}`);
+    coachVerse=cacheGet(`coach_verse_${coachDay}`);
+    if(!currentCoach && navigator.onLine)console.error(error);
+  }
+  renderCoach();
+}
+function renderCoach(){
+  if(!currentCoach || !coachVerse){
+    $("coachAvailability").textContent=`Coach content for Day ${coachDay} is not prepared yet.`;
+    $("coachContent").classList.add("hidden");
+    return;
+  }
+  $("coachAvailability").textContent=`Day ${coachDay} · ${coachVerse.reference}`;
+  $("coachOriginal").textContent=coachVerse.maa_text||"";
+  $("coachPronunciation").textContent=currentCoach.pronunciation||"";
+  $("coachTranslation").textContent=currentCoach.direct_translation||"";
+  $("coachChunks").innerHTML=splitLines(currentCoach.meaning_chunks)
+    .map(line=>`<div class="coach-line">${line}</div>`).join("");
+  $("coachWords").innerHTML=splitLines(currentCoach.word_study)
+    .map(line=>{const x=parseWordLine(line);return `<div class="word-row"><strong>${x.word}</strong><span>${x.meaning}</span></div>`;}).join("");
+  $("coachImage").textContent=currentCoach.memory_image||"";
+  $("coachConnection").textContent=currentCoach.previous_connection||"";
+  $("coachRhythm").textContent=currentCoach.rhythm||"";
+  $("coachSong").textContent=currentCoach.song||"";
+  $("coachTestPrompt").textContent=currentCoach.test_prompt||"";
+  $("coachAnswer").textContent=coachVerse.maa_text||"";
+  $("coachAnswer").classList.add("hidden");
+  $("coachCountdown").textContent="30";
+  $("coachTestPanel").classList.add("hidden");
+  $("coachContent").classList.remove("hidden");
+}
+function startCoachTest(){
+  if(!currentCoach || !coachVerse)return;
+  clearInterval(coachTimerId);
+  coachSeconds=30;
+  $("coachCountdown").textContent=coachSeconds;
+  $("coachAnswer").classList.add("hidden");
+  $("coachTestPanel").classList.remove("hidden");
+  coachTimerId=setInterval(()=>{
+    coachSeconds--;
+    $("coachCountdown").textContent=coachSeconds;
+    if(coachSeconds<=0){
+      clearInterval(coachTimerId);
+      $("coachCountdown").textContent="Time";
+    }
+  },1000);
 }
 
 async function loadSettings(){
@@ -83,6 +171,7 @@ async function loadParticipants(){
     participants.map(x=>`<option value="${x.id}">${x.name}</option>`).join("");
 }
 async function initialize(){
+  populateCoachDays();
   try{
     await loadSettings();
     await Promise.all([loadContent(),loadParticipants()]);
@@ -91,6 +180,7 @@ async function initialize(){
       $("participantSelect").value=saved;
       await loadMyProgress();
     }
+    updateCoachVisibility();
     if(navigator.onLine){
       await Promise.all([loadCommunity(),loadLeaderboard()]);
     }else{
@@ -466,6 +556,7 @@ document.querySelectorAll(".lang").forEach(btn=>{
 $("participantSelect").onchange=()=>{
   localStorage.setItem("osotua_participant",$("participantSelect").value);
   loadMyProgress();
+  updateCoachVisibility();
 };
 $("startRecording").onclick=startRecording;
 $("stopRecording").onclick=stopRecording;
@@ -474,6 +565,22 @@ $("submitRecording").onclick=submitRecording;
 $("refreshCommunity").onclick=loadCommunity;
 $("syncPending").onclick=syncPendingQueue;
 $("syncPendingLarge").onclick=syncPendingQueue;
+$("toggleCoach").onclick=()=>{
+  $("coachBody").classList.toggle("hidden");
+  $("toggleCoach").textContent=$("coachBody").classList.contains("hidden")?"Open Coach":"Close Coach";
+  if(!$("coachBody").classList.contains("hidden")){
+    const requested=Number($("coachDaySelect").value||Math.min(currentDay,2));
+    $("coachDaySelect").value=String(requested);
+    loadCoachDay(requested);
+  }
+};
+$("coachDaySelect").onchange=()=>loadCoachDay($("coachDaySelect").value);
+$("startCoachTest").onclick=startCoachTest;
+$("revealCoachAnswer").onclick=()=>{
+  clearInterval(coachTimerId);
+  $("coachAnswer").classList.remove("hidden");
+};
+
 
 $("openAdmin").onclick=openAdmin;
 $("closeAdmin").onclick=closeAdmin;

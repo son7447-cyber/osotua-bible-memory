@@ -1,4 +1,4 @@
-const CACHE_NAME="osotua-v4-4";
+const CACHE_NAME="osotua-v5-0";
 const APP_SHELL=[
   "./",
   "./index.html",

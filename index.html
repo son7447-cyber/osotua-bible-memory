@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSOTUA V4.4</title>
+<title>OSOTUA V5.0</title>
 <meta name="theme-color" content="#5e4930">
 <meta name="description" content="Maasai Bible Memory Platform — Romans 8, 50 Day Challenge">
 <link rel="manifest" href="manifest.webmanifest">
@@ -15,7 +15,7 @@
 <header class="topbar">
   <div>
     <div class="brand">OSOTUA Bible Memory</div>
-    <div class="subtitle">Romans 8 · 50 Day Challenge · V4.4</div>
+    <div class="subtitle">Romans 8 · 50 Day Challenge · V5.0</div>
   </div>
   <div class="header-actions">
     <span id="networkBadge" class="badge">Checking…</span>
@@ -74,6 +74,45 @@
   </div>
   <audio id="audioPreview" controls hidden></audio>
   <p id="submitStatus" class="muted">No recording yet.</p>
+</section>
+
+
+<section id="coachCard" class="card hidden">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">MAASAI MEMORY COACH</p>
+      <h2>Korean Learner Mode</h2>
+    </div>
+    <button id="toggleCoach" class="secondary">Open Coach</button>
+  </div>
+
+  <div id="coachBody" class="hidden">
+    <label for="coachDaySelect">Practice Day</label>
+    <select id="coachDaySelect"></select>
+    <p id="coachAvailability" class="muted"></p>
+
+    <div id="coachContent" class="hidden">
+      <article class="coach-step"><span>1</span><div><h3>Original</h3><p id="coachOriginal"></p></div></article>
+      <article class="coach-step"><span>2</span><div><h3>Korean Pronunciation</h3><p id="coachPronunciation"></p></div></article>
+      <article class="coach-step"><span>3</span><div><h3>Direct Translation</h3><p id="coachTranslation"></p></div></article>
+      <article class="coach-step"><span>4</span><div><h3>Meaning Chunks</h3><div id="coachChunks"></div></div></article>
+      <article class="coach-step"><span>5</span><div><h3>Maa Word Study</h3><div id="coachWords"></div></div></article>
+      <article class="coach-step"><span>6</span><div><h3>Memory Image</h3><p id="coachImage"></p></div></article>
+      <article class="coach-step"><span>7</span><div><h3>Connection</h3><p id="coachConnection"></p></div></article>
+      <article class="coach-step"><span>8</span><div><h3>Memory Rhythm</h3><p id="coachRhythm" class="rhythm"></p></div></article>
+      <article class="coach-step"><span>9</span><div><h3>Memory Song</h3><p id="coachSong" class="song"></p></div></article>
+      <article class="coach-step"><span>10</span><div><h3>30-Second Test</h3><p id="coachTestPrompt"></p>
+        <button id="startCoachTest">Start Test</button>
+      </div></article>
+
+      <div id="coachTestPanel" class="test-panel hidden">
+        <div id="coachCountdown" class="countdown">30</div>
+        <p>Recite without looking at the verse.</p>
+        <button id="revealCoachAnswer" class="secondary">Reveal Answer</button>
+        <p id="coachAnswer" class="verse hidden"></p>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section id="pendingCard" class="card hidden">
