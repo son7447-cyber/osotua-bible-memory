@@ -1,15 +1,1 @@
-*{box-sizing:border-box}
-body{margin:0;background:#f4f1e9;color:#1f2933;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
-.container{max-width:760px;margin:auto;padding:24px 14px 50px}
-header{text-align:center;margin-bottom:20px}
-.eyebrow{font-size:12px;letter-spacing:.12em;color:#6b7280;font-weight:800}
-h1{margin:.2rem 0;font-size:2rem}
-.card{background:#fff;border:1px solid #ded8ca;border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 4px 14px #0000000d}
-button{border:0;border-radius:10px;padding:12px 16px;background:#5e4930;color:#fff;font-weight:800;cursor:pointer;margin:4px}
-button.secondary{background:#ddd6c9;color:#222}
-.status-row{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #eee}
-.status-row:last-child{border-bottom:0}
-.pass{color:#157347}.fail{color:#b42318}.working{color:#9a6700}
-#participantsList{display:grid;gap:8px}
-.person{padding:10px;border-radius:10px;background:#f7f5ef}
-pre{white-space:pre-wrap;background:#111827;color:#d1fae5;padding:14px;border-radius:10px;min-height:150px;overflow:auto}
+*{box-sizing:border-box}body{margin:0;background:#f4f1e9;font-family:system-ui;color:#1f2933}header{background:white;padding:16px;display:flex;justify-content:space-between;border-bottom:1px solid #ddd}main{max-width:820px;margin:auto;padding:18px}.card{background:white;border:1px solid #ddd;border-radius:16px;padding:18px;margin:14px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.grid>div{padding:12px;background:#faf9f6;border-radius:10px}button,select{padding:11px 14px;border-radius:10px;border:1px solid #ccc;margin:4px}button{background:#5e4930;color:white;font-weight:700}.actions{display:flex;flex-wrap:wrap}.verse{font-size:1.15rem;line-height:1.7}.pass{color:#157347}.fail{color:#b42318}.person{padding:10px 0;border-bottom:1px solid #eee}audio{width:100%;margin-top:10px}pre{background:#111827;color:#d1fae5;padding:14px;border-radius:10px;white-space:pre-wrap;min-height:170px}@media(max-width:600px){.grid{grid-template-columns:1fr}header{display:block}}

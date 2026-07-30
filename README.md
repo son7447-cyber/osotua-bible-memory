@@ -1,12 +1,11 @@
-# OSOTUA Bible Memory Platform
+# OSOTUA Bible Memory Platform V3 Beta
 
-Romans 8 — 50 Day Challenge
+Includes:
+- Real Supabase diagnostics
+- Participant loading
+- Browser recording
+- Upload to `recordings`
+- Save/upsert to `memory_submissions`
+- Community status and playback
 
-## Version
-3.0 Alpha
-
-## Checks
-- Supabase API connection
-- Participants table
-- Recordings bucket
-- Memory submissions table
+Deploy by uploading all files to GitHub. Netlify redeploys automatically.
