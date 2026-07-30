@@ -1,11 +1,14 @@
-# OSOTUA Bible Memory Platform V3 Beta
+# OSOTUA Bible Memory Platform V3.1
 
-Includes:
-- Real Supabase diagnostics
-- Participant loading
-- Browser recording
-- Upload to `recordings`
-- Save/upsert to `memory_submissions`
-- Community status and playback
+## New in V3.1
+- Personal 50-day progress dashboard
+- Completed days, percentage, and streak
+- Participant choice remembered on the same device
+- Safer re-submission flow
+- Community submission time
+- 2-minute recording limit
+- Mobile layout improvements
+- Existing Supabase diagnostics retained
 
-Deploy by uploading all files to GitHub. Netlify redeploys automatically.
+## Deploy
+Upload all files to GitHub. Netlify will redeploy automatically.

@@ -1,9 +1,91 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OSOTUA V3 Beta</title><link rel="stylesheet" href="css/style.css"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script></head><body>
-<header><b>OSOTUA Bible Memory</b><span>Romans 8 · 50 Day Challenge · V3 Beta</span></header>
-<main>
-<section class="card"><h1>System Diagnostics</h1><button id="run">Run System Check</button><div class="grid"><div>Supabase API <strong id="api">Waiting</strong></div><div>Participants <strong id="people">Waiting</strong></div><div>Storage <strong id="storage">Waiting</strong></div><div>Database <strong id="db">Waiting</strong></div></div></section>
-<section class="card"><h2>Participant</h2><select id="participant"></select></section>
-<section class="card"><h2>Day 1 · Romans 8:1</h2><p class="verse">Metii naa taata enkiguana te lelo ootii atua Kristo Yesu.</p><div class="actions"><button id="start">🎙 Start Recording</button><button id="stop" disabled>⏹ Stop</button><button id="play" disabled>▶ Play</button><button id="submit" disabled>✓ Submit</button></div><audio id="preview" controls hidden></audio><p id="submitStatus">No recording yet.</p></section>
-<section class="card"><h2>Community — Day 1</h2><button id="refresh">Refresh</button><p id="summary">Loading…</p><div id="community"></div></section>
-<section class="card"><h2>Diagnostic Log</h2><pre id="log">Ready.</pre></section>
-</main><script src="js/config.js"></script><script src="js/app.js"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>OSOTUA V3.1</title>
+  <meta name="theme-color" content="#5e4930">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <div class="brand">OSOTUA Bible Memory</div>
+    <div class="subtitle">Romans 8 · 50 Day Challenge · V3.1</div>
+  </div>
+  <span id="networkBadge" class="badge">Checking…</span>
+</header>
+
+<main class="container">
+  <section class="card">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">PARTICIPANT</p>
+        <h1>My Memory Journey</h1>
+      </div>
+      <button id="runDiagnostics" class="secondary">System Check</button>
+    </div>
+    <select id="participantSelect">
+      <option value="">Loading participants…</option>
+    </select>
+    <div id="myProgress" class="progress-card hidden">
+      <div class="progress-meta">
+        <strong id="progressName">Participant</strong>
+        <span id="progressText">0 / 50</span>
+      </div>
+      <div class="progress-bar"><div id="progressFill"></div></div>
+      <div class="mini-stats">
+        <div><span>Completed</span><strong id="completedDays">0</strong></div>
+        <div><span>Progress</span><strong id="progressPercent">0%</strong></div>
+        <div><span>Streak</span><strong id="streakCount">0</strong></div>
+      </div>
+      <div id="dayGrid" class="day-grid"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <p class="eyebrow">TODAY</p>
+    <h2 id="dayTitle">Day 1 · Romans 8:1</h2>
+    <p id="verseText" class="verse">Metii naa taata enkiguana te lelo ootii atua Kristo Yesu.</p>
+    <div class="timer" id="timer">00:00</div>
+    <div class="actions">
+      <button id="startRecording">🎙 Start Recording</button>
+      <button id="stopRecording" class="secondary" disabled>⏹ Stop</button>
+      <button id="playRecording" class="secondary" disabled>▶ Play</button>
+      <button id="submitRecording" disabled>✓ Submit</button>
+    </div>
+    <audio id="audioPreview" controls hidden></audio>
+    <p id="submitStatus" class="muted">No recording yet.</p>
+  </section>
+
+  <section class="card">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">COMMUNITY</p>
+        <h2>Today’s Progress</h2>
+      </div>
+      <button id="refreshCommunity" class="secondary">Refresh</button>
+    </div>
+    <p id="communitySummary" class="summary">Loading…</p>
+    <div id="communityList"></div>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary><strong>System Diagnostics</strong></summary>
+      <div class="status-grid">
+        <div>Supabase API <strong id="apiStatus">Waiting</strong></div>
+        <div>Participants <strong id="participantsStatus">Waiting</strong></div>
+        <div>Storage <strong id="storageStatus">Waiting</strong></div>
+        <div>Database <strong id="databaseStatus">Waiting</strong></div>
+      </div>
+      <pre id="log">Ready.</pre>
+    </details>
+  </section>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
