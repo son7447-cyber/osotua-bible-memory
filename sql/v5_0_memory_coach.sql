@@ -44,7 +44,7 @@ te lelo | 그 사람들에게
 ootii atua Kristo Yesu | 그리스도 예수 안에 있는$txt$,
   $txt$Metii = 없다, 존재하지 않는다
 naa = 그러므로, 그래서
-taata = 지금, 이제
+ taata = 지금, 이제
 enkiguana = 심판, 정죄
 lelo = 그 사람들
 ootii = 있는 사람들

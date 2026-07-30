@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSOTUA V5.0</title>
+<title>OSOTUA V5.1</title>
 <meta name="theme-color" content="#5e4930">
 <meta name="description" content="Maasai Bible Memory Platform — Romans 8, 50 Day Challenge">
 <link rel="manifest" href="manifest.webmanifest">
@@ -15,7 +15,7 @@
 <header class="topbar">
   <div>
     <div class="brand">OSOTUA Bible Memory</div>
-    <div class="subtitle">Romans 8 · 50 Day Challenge · V5.0</div>
+    <div class="subtitle">Romans 8 · 50 Day Challenge · V5.1</div>
   </div>
   <div class="header-actions">
     <span id="networkBadge" class="badge">Checking…</span>
@@ -90,6 +90,27 @@
     <label for="coachDaySelect">Practice Day</label>
     <select id="coachDaySelect"></select>
     <p id="coachAvailability" class="muted"></p>
+
+    <div id="coachAudioPanel" class="coach-audio-panel hidden">
+      <div class="compare-grid">
+        <div class="compare-box">
+          <h3>Reference Maa Audio</h3>
+          <p id="coachReferenceStatus" class="muted">Not uploaded yet.</p>
+          <audio id="coachReferenceAudio" controls hidden></audio>
+        </div>
+        <div class="compare-box">
+          <h3>My Practice Recording</h3>
+          <p id="coachPracticeStatus" class="muted">Record yourself, then compare.</p>
+          <div class="actions">
+            <button id="coachStartPractice">🎙 Practice</button>
+            <button id="coachStopPractice" class="secondary" disabled>⏹ Stop</button>
+            <button id="coachPlayPractice" class="secondary" disabled>▶ Play</button>
+          </div>
+          <audio id="coachPracticeAudio" controls hidden></audio>
+        </div>
+      </div>
+      <p class="help">Listen to the Maa model, record yourself, and alternate between the two recordings.</p>
+    </div>
 
     <div id="coachContent" class="hidden">
       <article class="coach-step"><span>1</span><div><h3>Original</h3><p id="coachOriginal"></p></div></article>
@@ -189,6 +210,20 @@
         <textarea id="editKorean"></textarea>
         <button id="saveContent">Save Content</button>
         <p id="contentSaveStatus" class="muted"></p>
+      </div>
+
+      <div class="admin-section">
+        <h3>Reference Maa Audio</h3>
+        <label>Speaker name</label>
+        <input id="referenceSpeaker" placeholder="Example: Pastor Johnson">
+        <label>Audio file</label>
+        <input id="referenceAudioFile" type="file" accept="audio/*">
+        <div class="actions">
+          <button id="uploadReferenceAudio">Upload / Replace</button>
+          <button id="removeReferenceAudio" class="secondary">Remove</button>
+        </div>
+        <audio id="adminReferencePreview" controls hidden></audio>
+        <p id="referenceAudioAdminStatus" class="muted">No reference audio uploaded.</p>
       </div>
 
       <div class="admin-section">

@@ -4,6 +4,7 @@ const $=id=>document.getElementById(id);
 let participants=[],participantMap=new Map();
 let settings=null,currentDay=1,currentContent=null,currentLanguage="maa";
 let currentCoach=null,coachVerse=null,coachDay=1,coachTimerId=null,coachSeconds=30;
+let practiceRecorder=null,practiceStream=null,practiceChunks=[],practiceBlob=null;
 let mediaRecorder=null,stream=null,chunks=[],audioBlob=null,timerId=null,seconds=0;
 let deferredInstallPrompt=null;
 
@@ -65,7 +66,7 @@ async function loadCoachDay(day){
   try{
     const [coachResult,verseResult]=await Promise.all([
       sb.from("memory_coach").select("*").eq("day",coachDay).maybeSingle(),
-      sb.from("memory_content").select("day,reference,maa_text").eq("day",coachDay).maybeSingle()
+      sb.from("memory_content").select("day,reference,maa_text,reference_audio_path,reference_speaker").eq("day",coachDay).maybeSingle()
     ]);
     if(coachResult.error)throw coachResult.error;
     if(verseResult.error)throw verseResult.error;
@@ -78,9 +79,10 @@ async function loadCoachDay(day){
     coachVerse=cacheGet(`coach_verse_${coachDay}`);
     if(!currentCoach && navigator.onLine)console.error(error);
   }
-  renderCoach();
+  await renderCoach();
 }
-function renderCoach(){
+async function renderCoach(){
+  await renderCoachAudio();
   if(!currentCoach || !coachVerse){
     $("coachAvailability").textContent=`Coach content for Day ${coachDay} is not prepared yet.`;
     $("coachContent").classList.add("hidden");
@@ -105,6 +107,71 @@ function renderCoach(){
   $("coachTestPanel").classList.add("hidden");
   $("coachContent").classList.remove("hidden");
 }
+async function referenceSigned(path){
+  const{data,error}=await sb.storage.from(OSOTUA_CONFIG.referenceBucket).createSignedUrl(path,3600);
+  if(error)throw error;
+  return data.signedUrl;
+}
+async function renderCoachAudio(){
+  $("coachAudioPanel").classList.remove("hidden");
+  const refAudio=$("coachReferenceAudio");
+  if(coachVerse?.reference_audio_path && navigator.onLine){
+    try{
+      refAudio.src=await referenceSigned(coachVerse.reference_audio_path);
+      refAudio.hidden=false;
+      $("coachReferenceStatus").textContent=coachVerse.reference_speaker
+        ?`Speaker: ${coachVerse.reference_speaker}`
+        :"Reference recording ready.";
+    }catch(error){
+      refAudio.hidden=true;
+      $("coachReferenceStatus").textContent=`Reference audio unavailable: ${error.message}`;
+    }
+  }else{
+    refAudio.removeAttribute("src");
+    refAudio.hidden=true;
+    $("coachReferenceStatus").textContent=coachVerse?.reference_audio_path
+      ?"Connect to the internet to play the reference audio."
+      :"Reference audio has not been uploaded for this Day.";
+  }
+  resetPracticeRecorder();
+}
+function resetPracticeRecorder(){
+  practiceBlob=null;
+  $("coachPracticeAudio").removeAttribute("src");
+  $("coachPracticeAudio").hidden=true;
+  $("coachStartPractice").disabled=false;
+  $("coachStopPractice").disabled=true;
+  $("coachPlayPractice").disabled=true;
+  $("coachPracticeStatus").textContent="Record yourself, then compare.";
+}
+async function startPracticeRecording(){
+  try{
+    practiceStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    practiceChunks=[];
+    practiceRecorder=new MediaRecorder(practiceStream);
+    practiceRecorder.ondataavailable=e=>{if(e.data.size)practiceChunks.push(e.data)};
+    practiceRecorder.onstop=()=>{
+      practiceBlob=new Blob(practiceChunks,{type:practiceRecorder.mimeType||"audio/webm"});
+      $("coachPracticeAudio").src=URL.createObjectURL(practiceBlob);
+      $("coachPracticeAudio").hidden=false;
+      $("coachPlayPractice").disabled=false;
+      $("coachPracticeStatus").textContent="Practice recording ready. Compare it with the Maa model.";
+    };
+    practiceRecorder.start();
+    $("coachStartPractice").disabled=true;
+    $("coachStopPractice").disabled=false;
+    $("coachPracticeStatus").textContent="Practice recording…";
+  }catch(error){
+    $("coachPracticeStatus").textContent=`Microphone error: ${error.message}`;
+  }
+}
+function stopPracticeRecording(){
+  if(practiceRecorder&&practiceRecorder.state!=="inactive")practiceRecorder.stop();
+  if(practiceStream)practiceStream.getTracks().forEach(track=>track.stop());
+  $("coachStartPractice").disabled=false;
+  $("coachStopPractice").disabled=true;
+}
+
 function startCoachTest(){
   if(!currentCoach || !coachVerse)return;
   clearInterval(coachTimerId);
@@ -452,6 +519,69 @@ async function loadLeaderboard(){
     .map((r,i)=>`<div class="rank-row"><span><strong>${i+1}. ${r.name}</strong></span><span>${r.count} / 50</span></div>`).join("");
 }
 
+async function loadAdminReferencePreview(){
+  const audio=$("adminReferencePreview");
+  $("referenceSpeaker").value=currentContent?.reference_speaker||"";
+  if(currentContent?.reference_audio_path && navigator.onLine){
+    try{
+      audio.src=await referenceSigned(currentContent.reference_audio_path);
+      audio.hidden=false;
+      $("referenceAudioAdminStatus").textContent="Reference audio is available for this Day.";
+    }catch(error){
+      audio.hidden=true;
+      $("referenceAudioAdminStatus").textContent=error.message;
+    }
+  }else{
+    audio.removeAttribute("src");
+    audio.hidden=true;
+    $("referenceAudioAdminStatus").textContent=currentContent?.reference_audio_path
+      ?"Connect to the internet to preview the audio."
+      :"No reference audio uploaded for this Day.";
+  }
+}
+async function uploadReferenceAudio(){
+  if(!navigator.onLine)return alert("Internet connection is required.");
+  const file=$("referenceAudioFile").files[0];
+  if(!file){$("referenceAudioAdminStatus").textContent="Choose an audio file first.";return;}
+  if(file.size>10*1024*1024){$("referenceAudioAdminStatus").textContent="The file must be smaller than 10 MB.";return;}
+  const ext=(file.name.split(".").pop()||"webm").replace(/[^a-zA-Z0-9]/g,"");
+  const path=`day-${currentDay}/reference-${Date.now()}.${ext}`;
+  $("referenceAudioAdminStatus").textContent="Uploading reference audio…";
+  const{error:uploadError}=await sb.storage.from(OSOTUA_CONFIG.referenceBucket).upload(path,file,{contentType:file.type||"audio/webm"});
+  if(uploadError){$("referenceAudioAdminStatus").textContent=uploadError.message;return;}
+  const oldPath=currentContent.reference_audio_path;
+  const payload={
+    reference_audio_path:path,
+    reference_speaker:$("referenceSpeaker").value.trim(),
+    updated_at:new Date().toISOString()
+  };
+  const{error:updateError}=await sb.from("memory_content").update(payload).eq("day",currentDay);
+  if(updateError){$("referenceAudioAdminStatus").textContent=updateError.message;return;}
+  if(oldPath && oldPath!==path){
+    await sb.storage.from(OSOTUA_CONFIG.referenceBucket).remove([oldPath]);
+  }
+  $("referenceAudioFile").value="";
+  $("referenceAudioAdminStatus").textContent="Reference audio uploaded.";
+  await loadContent();
+  await loadAdminReferencePreview();
+  if(coachDay===currentDay)await loadCoachDay(coachDay);
+}
+async function removeReferenceAudio(){
+  if(!navigator.onLine)return alert("Internet connection is required.");
+  const path=currentContent?.reference_audio_path;
+  if(!path){$("referenceAudioAdminStatus").textContent="There is no reference audio to remove.";return;}
+  if(!confirm("Remove the reference audio for this Day?"))return;
+  const{error:updateError}=await sb.from("memory_content")
+    .update({reference_audio_path:"",reference_speaker:"",updated_at:new Date().toISOString()})
+    .eq("day",currentDay);
+  if(updateError){$("referenceAudioAdminStatus").textContent=updateError.message;return;}
+  await sb.storage.from(OSOTUA_CONFIG.referenceBucket).remove([path]);
+  $("referenceAudioAdminStatus").textContent="Reference audio removed.";
+  await loadContent();
+  await loadAdminReferencePreview();
+  if(coachDay===currentDay)await loadCoachDay(coachDay);
+}
+
 function openAdmin(){$("adminModal").classList.remove("hidden");}
 function closeAdmin(){$("adminModal").classList.add("hidden");}
 function adminLogin(){
@@ -472,6 +602,7 @@ async function renderAdmin(){
   $("editMaa").value=currentContent.maa_text||"";
   $("editEnglish").value=currentContent.english_text||"";
   $("editKorean").value=currentContent.korean_text||"";
+  await loadAdminReferencePreview();
 
   if(!navigator.onLine){
     $("adminStats").innerHTML='<div><span>Status</span><strong>Offline</strong></div>';
@@ -575,6 +706,9 @@ $("toggleCoach").onclick=()=>{
   }
 };
 $("coachDaySelect").onchange=()=>loadCoachDay($("coachDaySelect").value);
+$("coachStartPractice").onclick=startPracticeRecording;
+$("coachStopPractice").onclick=stopPracticeRecording;
+$("coachPlayPractice").onclick=()=>$("coachPracticeAudio").play();
 $("startCoachTest").onclick=startCoachTest;
 $("revealCoachAnswer").onclick=()=>{
   clearInterval(coachTimerId);
@@ -589,6 +723,8 @@ $("previousDay").onclick=()=>{currentDay=Math.max(1,currentDay-1);$("adminCurren
 $("nextDay").onclick=()=>{currentDay=Math.min(50,currentDay+1);$("adminCurrentDay").textContent=`Day ${currentDay}`;};
 $("saveSchedule").onclick=saveSchedule;
 $("saveContent").onclick=saveContent;
+$("uploadReferenceAudio").onclick=uploadReferenceAudio;
+$("removeReferenceAudio").onclick=removeReferenceAudio;
 $("addParticipant").onclick=addParticipant;
 
 window.addEventListener("beforeinstallprompt",event=>{

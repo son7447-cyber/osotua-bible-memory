@@ -36,3 +36,10 @@ label{display:block;font-weight:800;margin:10px 0 5px}.check-row{display:flex;al
 .countdown{font-size:3rem;font-weight:900;font-variant-numeric:tabular-nums}
 #coachDaySelect{margin-bottom:8px}
 @media(max-width:650px){.word-row{grid-template-columns:1fr}.coach-step{grid-template-columns:32px 1fr}}
+
+.coach-audio-panel{margin:14px 0;padding:14px;background:var(--soft);border:1px solid var(--line);border-radius:14px}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.compare-box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
+.compare-box h3{margin-top:0}
+.compare-box audio{margin-top:10px}
+@media(max-width:650px){.compare-grid{grid-template-columns:1fr}}
