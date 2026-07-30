@@ -1,1 +1,45 @@
-OSOTUA V3
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSOTUA V3 Alpha</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<main class="container">
+<header>
+<p class="eyebrow">ROMANS 8 · 50 DAY CHALLENGE</p>
+<h1>OSOTUA Bible Memory</h1>
+<p>Version 3.0 Alpha — System Diagnostics</p>
+</header>
+
+<section class="card">
+<button id="runTests">Run System Check</button>
+<button id="clearLog" class="secondary">Clear Log</button>
+</section>
+
+<section class="card">
+<h2>System Status</h2>
+<div class="status-row"><span>Supabase API</span><strong id="apiStatus">Waiting</strong></div>
+<div class="status-row"><span>Participants</span><strong id="participantsStatus">Waiting</strong></div>
+<div class="status-row"><span>Storage bucket</span><strong id="storageStatus">Waiting</strong></div>
+<div class="status-row"><span>Submission table</span><strong id="databaseStatus">Waiting</strong></div>
+</section>
+
+<section class="card">
+<h2>Participants</h2>
+<div id="participantsList">Not loaded yet.</div>
+</section>
+
+<section class="card">
+<h2>Diagnostic Log</h2>
+<pre id="log">Ready.</pre>
+</section>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/diagnostics.js"></script>
+</body>
+</html>
