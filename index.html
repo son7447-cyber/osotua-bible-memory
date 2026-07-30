@@ -3,8 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSOTUA V4.3</title>
+<title>OSOTUA V4.4</title>
 <meta name="theme-color" content="#5e4930">
+<meta name="description" content="Maasai Bible Memory Platform — Romans 8, 50 Day Challenge">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -12,13 +15,21 @@
 <header class="topbar">
   <div>
     <div class="brand">OSOTUA Bible Memory</div>
-    <div class="subtitle">Romans 8 · 50 Day Challenge · V4.3</div>
+    <div class="subtitle">Romans 8 · 50 Day Challenge · V4.4</div>
   </div>
   <div class="header-actions">
     <span id="networkBadge" class="badge">Checking…</span>
+    <button id="installApp" class="secondary compact hidden">Install</button>
+    <button id="syncPending" class="secondary compact">
+      Sync <span id="pendingCount">0</span>
+    </button>
     <button id="openAdmin" class="secondary compact">Admin</button>
   </div>
 </header>
+
+<div id="offlineNotice" class="offline-notice hidden">
+  Offline mode: you can read the cached verse and record. Your submission will be saved on this device until the internet returns.
+</div>
 
 <main class="container">
 <section class="card">
@@ -65,6 +76,18 @@
   <p id="submitStatus" class="muted">No recording yet.</p>
 </section>
 
+<section id="pendingCard" class="card hidden">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">OFFLINE QUEUE</p>
+      <h2>Waiting to Sync</h2>
+    </div>
+    <button id="syncPendingLarge">Sync Now</button>
+  </div>
+  <p id="pendingSummary" class="summary"></p>
+  <div id="pendingList"></div>
+</section>
+
 <section class="card">
   <div class="section-heading">
     <div><p class="eyebrow">COMMUNITY</p><h2>Today’s Progress</h2></div>
@@ -103,18 +126,14 @@
           <input id="autoAdvance" type="checkbox">
           <span>Advance the Day automatically</span>
         </label>
-
         <label for="startDate">Project start date</label>
         <input id="startDate" type="date">
-
         <p class="help">When automatic mode is on, the start date is Day 1. The project advances one Day every calendar day.</p>
-
         <div class="day-control">
           <button id="previousDay" class="secondary">◀</button>
           <strong id="adminCurrentDay">Day 1</strong>
           <button id="nextDay">▶</button>
         </div>
-
         <button id="saveSchedule">Save Schedule</button>
         <p id="scheduleSaveStatus" class="muted"></p>
       </div>
@@ -158,6 +177,7 @@
 </div>
 
 <script src="js/config.js"></script>
+<script src="js/offline.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

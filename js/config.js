@@ -3,5 +3,6 @@ const OSOTUA_CONFIG={
   supabaseKey:"sb_publishable_N7d4t8ZAZ5Z6KUTsLB5l9w_Blj85XSJ",
   bucket:"recordings",
   totalDays:50,
-  adminPin:"0808"
+  adminPin:"0808",
+  cacheVersion:"4.4"
 };
