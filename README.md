@@ -1,13 +1,14 @@
-# OSOTUA Bible Memory Platform V4.0
+# OSOTUA Bible Memory Platform V4.3
 
 ## New
-- Bible memory content moved from JavaScript into Supabase
-- Maa / English / Korean tabs
-- Admin can edit the current day's reference and three language texts
-- Existing recording, community, progress, leaderboard and participant management retained
+- Automatic Day advancement based on a project start date
+- Manual or Automatic schedule mode
+- Selected language button style fixed
+- Admin list of participants who have not submitted today
+- Existing multilingual content, recording, progress, community and leaderboard retained
 
 ## Required
-Run `sql/v4_0_content_database.sql` once in Supabase SQL Editor before testing.
+Run `sql/v4_3_auto_schedule.sql` once in Supabase SQL Editor.
 
 ## Admin PIN
 0808

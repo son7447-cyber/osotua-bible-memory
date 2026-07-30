@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSOTUA V4.0</title>
+<title>OSOTUA V4.3</title>
 <meta name="theme-color" content="#5e4930">
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,7 +12,7 @@
 <header class="topbar">
   <div>
     <div class="brand">OSOTUA Bible Memory</div>
-    <div class="subtitle">Romans 8 · 50 Day Challenge · V4.0</div>
+    <div class="subtitle">Romans 8 · 50 Day Challenge · V4.3</div>
   </div>
   <div class="header-actions">
     <span id="networkBadge" class="badge">Checking…</span>
@@ -25,6 +25,7 @@
   <p class="eyebrow">PARTICIPANT</p>
   <h1>My Memory Journey</h1>
   <select id="participantSelect"><option value="">Loading participants…</option></select>
+
   <div id="myProgress" class="progress-card hidden">
     <div class="progress-meta"><strong id="progressName">Participant</strong><span id="progressText">0 / 50</span></div>
     <div class="progress-bar"><div id="progressFill"></div></div>
@@ -38,8 +39,13 @@
 </section>
 
 <section class="card">
-  <p class="eyebrow">TODAY</p>
-  <h2 id="dayTitle">Loading…</h2>
+  <div class="today-heading">
+    <div>
+      <p class="eyebrow">TODAY</p>
+      <h2 id="dayTitle">Loading…</h2>
+    </div>
+    <span id="dayModeBadge" class="mode-badge">Manual</span>
+  </div>
 
   <div class="language-tabs">
     <button class="lang active" data-lang="maa">Maa</button>
@@ -92,18 +98,29 @@
       <h2>Project Control</h2>
 
       <div class="admin-section">
-        <h3>Current Day</h3>
+        <h3>Day Schedule</h3>
+        <label class="check-row">
+          <input id="autoAdvance" type="checkbox">
+          <span>Advance the Day automatically</span>
+        </label>
+
+        <label for="startDate">Project start date</label>
+        <input id="startDate" type="date">
+
+        <p class="help">When automatic mode is on, the start date is Day 1. The project advances one Day every calendar day.</p>
+
         <div class="day-control">
           <button id="previousDay" class="secondary">◀</button>
           <strong id="adminCurrentDay">Day 1</strong>
           <button id="nextDay">▶</button>
         </div>
-        <button id="saveDay">Save Current Day</button>
-        <p id="daySaveStatus" class="muted"></p>
+
+        <button id="saveSchedule">Save Schedule</button>
+        <p id="scheduleSaveStatus" class="muted"></p>
       </div>
 
       <div class="admin-section">
-        <h3>Edit Today’s Content</h3>
+        <h3>Edit Current Day Content</h3>
         <label>Reference</label>
         <input id="editReference" placeholder="Romans 8:1">
         <label>Maa</label>
@@ -114,6 +131,13 @@
         <textarea id="editKorean"></textarea>
         <button id="saveContent">Save Content</button>
         <p id="contentSaveStatus" class="muted"></p>
+      </div>
+
+      <div class="admin-section">
+        <h3>Today’s Statistics</h3>
+        <div id="adminStats" class="mini-stats"></div>
+        <h4>Not submitted</h4>
+        <div id="missingParticipants" class="missing-list"></div>
       </div>
 
       <div class="admin-section">
@@ -128,11 +152,6 @@
       <div class="admin-section">
         <h3>Participants</h3>
         <div id="adminParticipants"></div>
-      </div>
-
-      <div class="admin-section">
-        <h3>Statistics</h3>
-        <div id="adminStats" class="mini-stats"></div>
       </div>
     </div>
   </div>
