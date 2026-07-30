@@ -1,11 +1,13 @@
-# OSOTUA Bible Memory Platform V3.3
+# OSOTUA Bible Memory Platform V4.0
 
 ## New
-- Full Maasai Romans 8 text, verses 1–39
-- Review plan for Days 40–50
-- Overall leaderboard
-- 3-minute recording limit for longer review days
-- Existing Admin, Progress, Community, Recording and Diagnostics retained
+- Bible memory content moved from JavaScript into Supabase
+- Maa / English / Korean tabs
+- Admin can edit the current day's reference and three language texts
+- Existing recording, community, progress, leaderboard and participant management retained
 
-## Deploy
-Upload all files to GitHub. Netlify redeploys automatically.
+## Required
+Run `sql/v4_0_content_database.sql` once in Supabase SQL Editor before testing.
+
+## Admin PIN
+0808
