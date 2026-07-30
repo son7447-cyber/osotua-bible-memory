@@ -1,16 +1,11 @@
-# OSOTUA Bible Memory Platform V3.2
+# OSOTUA Bible Memory Platform V3.3
 
 ## New
-- Admin modal
-- Current Day control stored in Supabase
-- Participant add / enable / disable
-- Today statistics
-- All users see the same current day
+- Full Maasai Romans 8 text, verses 1–39
+- Review plan for Days 40–50
+- Overall leaderboard
+- 3-minute recording limit for longer review days
+- Existing Admin, Progress, Community, Recording and Diagnostics retained
 
-## Required before deployment
-Run `sql/v3_2_admin_setup.sql` once in Supabase SQL Editor.
-
-## Test admin PIN
-`0808`
-
-This PIN is suitable only for the current small closed-group prototype.
+## Deploy
+Upload all files to GitHub. Netlify redeploys automatically.

@@ -1,137 +1,90 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>OSOTUA V3.2</title>
-  <meta name="theme-color" content="#5e4930">
-  <link rel="stylesheet" href="css/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OSOTUA V3.3</title>
+<meta name="theme-color" content="#5e4930">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header class="topbar">
-  <div>
-    <div class="brand">OSOTUA Bible Memory</div>
-    <div class="subtitle">Romans 8 · 50 Day Challenge · V3.2</div>
-  </div>
-  <div class="header-actions">
-    <span id="networkBadge" class="badge">Checking…</span>
-    <button id="openAdmin" class="secondary compact">Admin</button>
-  </div>
+<div><div class="brand">OSOTUA Bible Memory</div><div class="subtitle">Romans 8 · 50 Day Challenge · V3.3</div></div>
+<div class="header-actions"><span id="networkBadge" class="badge">Checking…</span><button id="openAdmin" class="secondary compact">Admin</button></div>
 </header>
-
 <main class="container">
-  <section class="card">
-    <p class="eyebrow">PARTICIPANT</p>
-    <h1>My Memory Journey</h1>
-    <select id="participantSelect"><option value="">Loading participants…</option></select>
+<section class="card">
+<p class="eyebrow">PARTICIPANT</p>
+<h1>My Memory Journey</h1>
+<select id="participantSelect"><option value="">Loading participants…</option></select>
+<div id="myProgress" class="progress-card hidden">
+<div class="progress-meta"><strong id="progressName">Participant</strong><span id="progressText">0 / 50</span></div>
+<div class="progress-bar"><div id="progressFill"></div></div>
+<div class="mini-stats"><div><span>Completed</span><strong id="completedDays">0</strong></div><div><span>Progress</span><strong id="progressPercent">0%</strong></div><div><span>Streak</span><strong id="streakCount">0</strong></div></div>
+<div id="dayGrid" class="day-grid"></div>
+</div>
+</section>
 
-    <div id="myProgress" class="progress-card hidden">
-      <div class="progress-meta">
-        <strong id="progressName">Participant</strong>
-        <span id="progressText">0 / 50</span>
-      </div>
-      <div class="progress-bar"><div id="progressFill"></div></div>
-      <div class="mini-stats">
-        <div><span>Completed</span><strong id="completedDays">0</strong></div>
-        <div><span>Progress</span><strong id="progressPercent">0%</strong></div>
-        <div><span>Streak</span><strong id="streakCount">0</strong></div>
-      </div>
-      <div id="dayGrid" class="day-grid"></div>
-    </div>
-  </section>
+<section class="card">
+<p class="eyebrow">TODAY</p>
+<h2 id="dayTitle">Loading…</h2>
+<p id="verseText" class="verse"></p>
+<div class="timer" id="timer">00:00</div>
+<div class="actions">
+<button id="startRecording">🎙 Start Recording</button>
+<button id="stopRecording" class="secondary" disabled>⏹ Stop</button>
+<button id="playRecording" class="secondary" disabled>▶ Play</button>
+<button id="submitRecording" disabled>✓ Submit</button>
+</div>
+<audio id="audioPreview" controls hidden></audio>
+<p id="submitStatus" class="muted">No recording yet.</p>
+</section>
 
-  <section class="card">
-    <p class="eyebrow">TODAY</p>
-    <h2 id="dayTitle">Loading today’s verse…</h2>
-    <p id="verseText" class="verse"></p>
+<section class="card">
+<div class="section-heading"><div><p class="eyebrow">COMMUNITY</p><h2>Today’s Progress</h2></div><button id="refreshCommunity" class="secondary">Refresh</button></div>
+<p id="communitySummary" class="summary">Loading…</p>
+<div id="communityList"></div>
+</section>
 
-    <div class="timer" id="timer">00:00</div>
-    <div class="actions">
-      <button id="startRecording">🎙 Start Recording</button>
-      <button id="stopRecording" class="secondary" disabled>⏹ Stop</button>
-      <button id="playRecording" class="secondary" disabled>▶ Play</button>
-      <button id="submitRecording" disabled>✓ Submit</button>
-    </div>
-    <audio id="audioPreview" controls hidden></audio>
-    <p id="submitStatus" class="muted">No recording yet.</p>
-  </section>
+<section class="card">
+<p class="eyebrow">LEADERBOARD</p>
+<h2>Overall Progress</h2>
+<div id="leaderboard"></div>
+</section>
 
-  <section class="card">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">COMMUNITY</p>
-        <h2>Today’s Progress</h2>
-      </div>
-      <button id="refreshCommunity" class="secondary">Refresh</button>
-    </div>
-    <p id="communitySummary" class="summary">Loading…</p>
-    <div id="communityList"></div>
-  </section>
-
-  <section class="card">
-    <details>
-      <summary><strong>System Diagnostics</strong></summary>
-      <button id="runDiagnostics" class="secondary">Run System Check</button>
-      <div class="status-grid">
-        <div>Supabase API <strong id="apiStatus">Waiting</strong></div>
-        <div>Participants <strong id="participantsStatus">Waiting</strong></div>
-        <div>Storage <strong id="storageStatus">Waiting</strong></div>
-        <div>Database <strong id="databaseStatus">Waiting</strong></div>
-        <div>Settings <strong id="settingsStatus">Waiting</strong></div>
-      </div>
-      <pre id="log">Ready.</pre>
-    </details>
-  </section>
+<section class="card">
+<details>
+<summary><strong>System Diagnostics</strong></summary>
+<button id="runDiagnostics" class="secondary">Run System Check</button>
+<div class="status-grid">
+<div>Supabase API <strong id="apiStatus">Waiting</strong></div>
+<div>Participants <strong id="participantsStatus">Waiting</strong></div>
+<div>Storage <strong id="storageStatus">Waiting</strong></div>
+<div>Database <strong id="databaseStatus">Waiting</strong></div>
+<div>Settings <strong id="settingsStatus">Waiting</strong></div>
+</div>
+<pre id="log">Ready.</pre>
+</details>
+</section>
 </main>
 
 <div id="adminModal" class="modal hidden">
-  <div class="modal-card">
-    <button id="closeAdmin" class="icon-button">✕</button>
-
-    <div id="adminLogin">
-      <p class="eyebrow">ADMIN</p>
-      <h2>Administrator Login</h2>
-      <input id="adminPin" type="password" inputmode="numeric" placeholder="Enter PIN">
-      <button id="adminLoginButton">Open Admin</button>
-      <p id="adminLoginStatus" class="muted"></p>
-    </div>
-
-    <div id="adminPanel" class="hidden">
-      <p class="eyebrow">ADMIN DASHBOARD</p>
-      <h2>Project Control</h2>
-
-      <div class="admin-section">
-        <h3>Current Day</h3>
-        <div class="day-control">
-          <button id="previousDay" class="secondary">◀</button>
-          <strong id="adminCurrentDay">Day 1</strong>
-          <button id="nextDay">▶</button>
-        </div>
-        <button id="saveDay">Save Current Day</button>
-        <p id="daySaveStatus" class="muted"></p>
-      </div>
-
-      <div class="admin-section">
-        <h3>Add Participant</h3>
-        <div class="inline-form">
-          <input id="newParticipantName" placeholder="Participant name">
-          <button id="addParticipant">Add</button>
-        </div>
-        <p id="participantAdminStatus" class="muted"></p>
-      </div>
-
-      <div class="admin-section">
-        <h3>Participants</h3>
-        <div id="adminParticipants"></div>
-      </div>
-
-      <div class="admin-section">
-        <h3>Today’s Statistics</h3>
-        <div id="adminStats" class="mini-stats"></div>
-      </div>
-    </div>
-  </div>
+<div class="modal-card">
+<button id="closeAdmin" class="icon-button">✕</button>
+<div id="adminLogin">
+<p class="eyebrow">ADMIN</p><h2>Administrator Login</h2>
+<input id="adminPin" type="password" inputmode="numeric" placeholder="Enter PIN">
+<button id="adminLoginButton">Open Admin</button><p id="adminLoginStatus" class="muted"></p>
+</div>
+<div id="adminPanel" class="hidden">
+<p class="eyebrow">ADMIN DASHBOARD</p><h2>Project Control</h2>
+<div class="admin-section"><h3>Current Day</h3><div class="day-control"><button id="previousDay" class="secondary">◀</button><strong id="adminCurrentDay">Day 1</strong><button id="nextDay">▶</button></div><button id="saveDay">Save Current Day</button><p id="daySaveStatus" class="muted"></p></div>
+<div class="admin-section"><h3>Add Participant</h3><div class="inline-form"><input id="newParticipantName" placeholder="Participant name"><button id="addParticipant">Add</button></div><p id="participantAdminStatus" class="muted"></p></div>
+<div class="admin-section"><h3>Participants</h3><div id="adminParticipants"></div></div>
+<div class="admin-section"><h3>Statistics</h3><div id="adminStats" class="mini-stats"></div></div>
+</div>
+</div>
 </div>
 
 <script src="js/config.js"></script>

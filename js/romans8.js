@@ -1,11 +1,46 @@
-const ROMANS8 = {
-1:"Metii naa taata enkiguana te lelo ootii atua Kristo Yesu.",
-2:"Amu aatalakutua nanu nkitanapat e Nkiyang'et e nkishui natii atua Kristo Yesu aaitung'uaa nkitanapat oo ng'ok o keeya.",
-3:"Amu Enkai nataasa ina natalaikinote nkitanapat, to lbae le nchalan o sesen aataas. Eirriwua Enkai Oinoti lenye te mpukunoto o sesen loo ng'ok tiatua osesen.",
-4:"pee etumi aaitabai nena sipat naajo nkitanapat tiatua iyiook; ilemerubare mbaa o sesen kake kirubare Enkiyang'et."
+const ROMANS8={
+  "1": "Metii naa taata enkiguana te lelo ootii atua Kristo Yesu.",
+  "2": "Amu aatalakutua nanu nkitanapat e Nkiyang'et e nkishui natii atua Kristo Yesu aaitung'uaa nkitanapat oo ng'ok o keeya.",
+  "3": "Amu Enkai nataasa ina natalaikinote nkitanapat, to lbae le nchalan o sesen aataas. Eirriwua Enkai Oinoti lenye te mpukunoto o sesen loo ng'ok tiatua osesen,",
+  "4": "pee etumi aaitabai nena sipat naajo nkitanapat tiatua iyiook; ilemerubare mbaa o sesen kake kirubare Enkiyang'et.",
+  "5": "Amu ore lelo oopuo erubare osesen naa mbaa o sesen naaitore ltauja lenye, kake ore lelo oopuo erubare Enkiyang'et naa mbaa e Nkiyang'et naaitore ltauja lenye.",
+  "6": "Ore paa osesen oitore mbaa o ltau, neaku ina keeya, ore paa Enkiyang'et naitore oltau, neaku ina enkishui o eseriani.",
+  "7": "Amu ore oltau oitore osesen naa olmang'atinta te Nkai; amu meishoru meitoria nkitanapat e Nkai, nemeidim;",
+  "8": "naa ore lelo laa osesen oitore nemeidim aaitishipa Enkai.",
+  "9": "Kake mme osesen oitore intae, Enkiyang'et naitore intae, te nesipa nchere etamanya atua intae Enkiyang'et e Nkai. Ore pooki ng'ae ake lemeeta Enkiyang'et e Kristo neme olenye ilo.",
+  "10": "Kake ore ake pee etii Kristo atua intae, te neye ninye iseseni linyi te nkanaki ng'ok neishu enkiyanget inyi te nkanaki esupatisho.",
+  "11": "Teneishu enkiyang'et e ilo oitopiwuo Yesu, ore ilo oitopiwuo Kristo Yesu too lootuata neisho sii lelo seseni linyi ooye enkishui teina kiyang'et enye namany atua intae.",
+  "12": "Ore te nkanaki ina, lalashera laainei, eikiaata esile, kake mme eno sesen, metaa osesen oitore iyiook kinchu,",
+  "13": "amu ore ake pee eaku osesen irubarere inchushu niyeye, kake ti niaariara intae te nkiyang'et inkiaasin o sesen metuata ninchushu.",
+  "14": "Amu ore lelo pooki laa Enkiyang'et e Nkai narikito, ninche inkera e Nkai.",
+  "15": "Amu mme enkiyang'et e rrindikisho eishooki intae entushukokinoto enkuretisho, kake eishooki intae enkiyang'et oo nkera inot. Ore te nikijo “Abba! Papa!”",
+  "16": "Enkiyang'et e Nkai kewan naishakenu te nebo enkiyang'et ang nchere kira nkera e Nkai,",
+  "17": "naa ti nikira nkera, nikira ilajung'ok, kira lajung'ok le Nkai te nebo Kristo, naa keisilisili iyiook te nebo ninye pee eyookini sii aaisho iyiook enkitoo te nebo ninye.",
+  "18": "Kayiolo nanu ajo ore nkisilisilot ena kata meitorisiokini ina kitoo nayookini aaboloki iyiook.",
+  "19": "Keanyita pooki toki naitayioki te yieunoto kitok metaboluni inkera e Nkai.",
+  "20": "Amu etipikaki seuseu erruorroto, neme te nkanaki naa enkop nayieu, kake te nkanaki yieuna e Nkai to siligi,",
+  "21": "amu keyookini aalaku seuseu pooki aaitung'uaa rrindikisho enye e nkidaaroto, neng'amu elakunoto e nkitoo oo nkera e Nkai.",
+  "22": "Amu kiyiolo aajo ore o tena kata, eigorito te mion seuseu pooki naitayioki to losilisili le mion o metabaiki ena olong.",
+  "23": "Neme seuseu ake naishir, kake ore sii ninche iyiook, ooidipa aanoto enkishorunoto e Nkiyang'et naiturukuo te kulie naapuonu, nikinchirita sii iyiook tiatua ate kiaanyu meitaa Enkai iyiook inkera enyena, neitabaya elakunoto ang.",
+  "24": "Amu tele siligi apa eitajewuoki eiyiook. Te naa eikidolita entoki nikisiligu, nemeitoki ilo siligi aata tipat. Keisiligu pasa oltung'ani entoki nadolita?",
+  "25": "Kake ti nikisiligu entoki nemelioo, naa eikiaanyu te ng'iriata.",
+  "26": "Nejia eiko Enkiyang'et pee elotu aretu iyiook te nchalan ang; amu mikiyiolo iyiook aajo kainyoo kiomonu nimikiyiolo enikijo ti nikiomonu, kake Enkiyang'et makewan naomonoki iyiook te mion nagut nemeinosunoyu.",
+  "27": "Ore ilo laa ninye ojur iltauja neyiolo ninye enajo Enkiyang'et, amu Enkai nayieu neaku enkiyang'et nanyikaki ninye too mbaa oo ltung'ana lenyena.",
+  "28": "Nikiyiolo aajo ore te pooki toki neasisho Enkai too mbaa supati te lelo oonyor ninye, te lelo oipotoki te risioroto e yieuna enye.",
+  "29": "Amu etayiolo apake Enkai ilenyena negelu metotiutu anaa ilo Inoti lenye, pee eaku ilo Inoti olkikau loo lalashera kumok.",
+  "30": "Ore lelo ooidipa ninye ategelu, neiteng'el; ore lelo ooiteng'ela ninye neipot, ore lelo ooipoto neikenaki esipata, ore lelo ooikenaka esipata neisho ake sii enkitoo.",
+  "31": "Kaa naa kijo tena? Amaa te netii Enkai enkalo ang, kalo oidim atigilunore iyiook?",
+  "32": "Eitu eibooyo ninye ilo Inoti lenye kake eishorua ninye te nkanaki iyiook pooki. Amaa etaasa ina, kainyoo ae naitoki amitiki ninye eisho iyiook pooki toki pesho?",
+  "33": "Ae ng'ae oitoki aitang'or ilgelunot le Nkai? Mme Enkai, amu ninye makewan naishoo ninche isipat.",
+  "34": "Ae ng'ae naa odung'oki ninche enkiguana? Ae Kristo Yesu otua, oonyaaka apiu aing'uaa keeya, netii taata, enkaina e tatene e Nkai, nesipa nchere ninye oomonoki iyiook.",
+  "35": "Kainyoo naidim atorishie iyiook enyorrata e Kristo? Keidim ingolikinot, anaa emion, anaa enkisilisiloto? Anaa olameyu, anaa tenikipuo mikinchopo, anaa batisho, anaa keeya, anaa olalem?",
+  "36": "Ore anaa enajo Ilkigerot: “Ore te nkanaki iyie, earitai iyiook dama o kewarie matuata; kitotiutuo anaa noshi tare naapuoi aayieng.”",
+  "37": "A'a, ore te kuna pooki kisula kimirisho te nkanaki ilo otonyorra iyiook.",
+  "38": "Amu aitisipa nanu nchere mme keeya, neme enkishui, neme ilmalaika, neme engolon e naimin, neme ntokitin naatii, neme ntokitin naapuonu neme nkitoriat neme enguton, neme ae toki te seuseu pooki, naidim atorishie iyiook enyorrata e Nkai natii Kristo Yesu Olaitoriani lang.",
+  "39": "Neme kulie kiyang'eta o loing'ang'e, aashu naatii olodo le nkop, neme hoo ae toki pooki natii enkop o loing'ang'e naidim atorishie iyiook enyorrata e Nkai natii Kristo Yesu Olaitoriani lang."
 };
 function verseForDay(day){
-  if(day<=39) return {reference:`Romans 8:${day}`, verse:day, text:ROMANS8[day]||"Verse text will be added."};
-  const reviewRanges={40:"Romans 8:1–5 Review",41:"Romans 8:6–10 Review",42:"Romans 8:11–15 Review",43:"Romans 8:16–20 Review",44:"Romans 8:21–25 Review",45:"Romans 8:26–30 Review",46:"Romans 8:31–34 Review",47:"Romans 8:35–39 Review",48:"Romans 8:1–20 Review",49:"Romans 8:21–39 Review",50:"Romans 8 Full Chapter"};
-  return {reference:reviewRanges[day],verse:39,text:"Review day. Recite the assigned section without looking at the text."};
+ if(day<=39)return {reference:`Romans 8:${day}`,verse:day,text:ROMANS8[day]};
+ const review={40:["Romans 8:1–5 Review","Recite Romans 8:1–5."],41:["Romans 8:6–10 Review","Recite Romans 8:6–10."],42:["Romans 8:11–15 Review","Recite Romans 8:11–15."],43:["Romans 8:16–20 Review","Recite Romans 8:16–20."],44:["Romans 8:21–25 Review","Recite Romans 8:21–25."],45:["Romans 8:26–30 Review","Recite Romans 8:26–30."],46:["Romans 8:31–34 Review","Recite Romans 8:31–34."],47:["Romans 8:35–39 Review","Recite Romans 8:35–39."],48:["Romans 8:1–20 Review","Recite Romans 8:1–20."],49:["Romans 8:21–39 Review","Recite Romans 8:21–39."],50:["Romans 8 Full Chapter","Recite the full chapter."]};
+ return {reference:review[day][0],verse:39,text:review[day][1]};
 }
