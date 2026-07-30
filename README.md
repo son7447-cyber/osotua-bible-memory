@@ -1,14 +1,16 @@
-# OSOTUA Bible Memory Platform V3.1
+# OSOTUA Bible Memory Platform V3.2
 
-## New in V3.1
-- Personal 50-day progress dashboard
-- Completed days, percentage, and streak
-- Participant choice remembered on the same device
-- Safer re-submission flow
-- Community submission time
-- 2-minute recording limit
-- Mobile layout improvements
-- Existing Supabase diagnostics retained
+## New
+- Admin modal
+- Current Day control stored in Supabase
+- Participant add / enable / disable
+- Today statistics
+- All users see the same current day
 
-## Deploy
-Upload all files to GitHub. Netlify will redeploy automatically.
+## Required before deployment
+Run `sql/v3_2_admin_setup.sql` once in Supabase SQL Editor.
+
+## Test admin PIN
+`0808`
+
+This PIN is suitable only for the current small closed-group prototype.
