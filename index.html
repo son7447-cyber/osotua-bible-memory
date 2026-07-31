@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSOTUA V5.3</title>
+<title>OSOTUA V5.3.1</title>
 <meta name="theme-color" content="#5e4930">
 <meta name="description" content="Maasai Bible Memory Platform — Romans 8, 50 Day Challenge">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icon-192.png">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=5.3.1">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header class="topbar">
   <div>
     <div class="brand">OSOTUA Bible Memory</div>
-    <div class="subtitle">Romans 8 · 50 Day Challenge · V5.3</div>
+    <div class="subtitle">Romans 8 · 50 Day Challenge · V5.3.1</div>
   </div>
   <div class="header-actions">
     <span id="networkBadge" class="badge">Checking…</span>
@@ -66,9 +66,9 @@
 <section class="card memory-flow-card">
   <p class="eyebrow">MEMORY FLOW</p>
   <div class="mode-tabs" role="tablist" aria-label="Memory modes">
-    <button type="button" class="mode-tab active" data-mode="study">📖 Learn<br><small>말씀보기</small></button>
-    <button type="button" class="mode-tab secondary" data-mode="practice">🧩 Practice<br><small>가리기 연습</small></button>
-    <button type="button" class="mode-tab secondary" data-mode="recite">🎙 Recite & Submit<br><small>암송·제출</small></button>
+    <button type="button" class="mode-tab active" data-mode="study">📖 Learn<br><small>Read the Verse</small></button>
+    <button type="button" class="mode-tab secondary" data-mode="practice">🧩 Practice<br><small>Word-Hiding Practice</small></button>
+    <button type="button" class="mode-tab secondary" data-mode="recite">🎙 Recite & Submit<br><small>Record and Submit</small></button>
   </div>
 </section>
 
@@ -79,7 +79,7 @@
   <div class="language-tabs">
     <button class="lang active" data-lang="maa">Maa</button>
     <button class="lang secondary" data-lang="en">English</button>
-    <button class="lang secondary" data-lang="ko">한국어</button>
+    <button class="lang secondary" data-lang="ko">Korean</button>
   </div>
   <p id="verseText" class="verse"></p>
   <button type="button" class="next-mode" data-go-mode="practice">Continue to Practice →</button>
@@ -93,7 +93,7 @@
   <div class="language-tabs">
     <button class="lang active" data-lang="maa">Maa</button>
     <button class="lang secondary" data-lang="en">English</button>
-    <button class="lang secondary" data-lang="ko">한국어</button>
+    <button class="lang secondary" data-lang="ko">Korean</button>
   </div>
 
   <div class="mask-controls" aria-label="Word hiding level">
@@ -123,8 +123,8 @@
   <p class="eyebrow">STEP 3 · RECITE & SUBMIT</p>
   <h2 id="reciteReference">Romans 8</h2>
   <div class="recite-only-reference">
-    <span>본문은 보이지 않습니다.</span>
-    <strong>장절만 보고 마사이어로 암송하세요.</strong>
+    <span>The verse text is hidden.</span>
+    <strong>Look only at the reference and recite the verse in Maa.</strong>
   </div>
 
   <div class="timer" id="timer">00:00</div>
@@ -274,7 +274,7 @@
         <textarea id="editMaa"></textarea>
         <label>English</label>
         <textarea id="editEnglish"></textarea>
-        <label>한국어</label>
+        <label>Korean</label>
         <textarea id="editKorean"></textarea>
         <button id="saveContent">Save Content</button>
         <p id="contentSaveStatus" class="muted"></p>
@@ -325,8 +325,8 @@
   </div>
 </div>
 
-<script src="js/config.js"></script>
-<script src="js/offline.js"></script>
-<script src="js/app.js"></script>
+<script src="js/config.js?v=5.3.1"></script>
+<script src="js/offline.js?v=5.3.1"></script>
+<script src="js/app.js?v=5.3.1"></script>
 </body>
 </html>

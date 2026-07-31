@@ -5,5 +5,5 @@ const OSOTUA_CONFIG={
   referenceBucket:"reference_audio",
   totalDays:50,
   adminPin:"0808",
-  cacheVersion:"5.3"
+  cacheVersion:"5.3.1"
 };
