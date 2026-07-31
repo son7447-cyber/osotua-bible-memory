@@ -2,7 +2,7 @@ const sb=window.supabase.createClient(OSOTUA_CONFIG.supabaseUrl,OSOTUA_CONFIG.su
 const $=id=>document.getElementById(id);
 
 let participants=[],participantMap=new Map();
-let settings=null,currentDay=1,currentContent=null,currentLanguage="maa";
+let settings=null,currentDay=1,adminDay=1,currentContent=null,selectedDay=1,selectedContent=null,currentLanguage="maa";
 let currentCoach=null,coachVerse=null,coachDay=1,coachTimerId=null,coachSeconds=30;
 let practiceRecorder=null,practiceStream=null,practiceChunks=[],practiceBlob=null;
 let mediaRecorder=null,stream=null,chunks=[],audioBlob=null,timerId=null,seconds=0;
@@ -47,6 +47,33 @@ function parseWordLine(line){
 function populateCoachDays(){
   $("coachDaySelect").innerHTML=Array.from({length:OSOTUA_CONFIG.totalDays},(_,i)=>i+1)
     .map(day=>`<option value="${day}">Day ${day}</option>`).join("");
+}
+function populatePracticeDays(){
+  $("practiceDaySelect").innerHTML=Array.from({length:OSOTUA_CONFIG.totalDays},(_,i)=>i+1)
+    .map(day=>`<option value="${day}">Day ${day}</option>`).join("");
+}
+function resetMainRecording(){
+  if(mediaRecorder&&mediaRecorder.state!=="inactive")mediaRecorder.stop();
+  if(stream)stream.getTracks().forEach(track=>track.stop());
+  clearInterval(timerId);
+  audioBlob=null;chunks=[];seconds=0;
+  $("timer").textContent="00:00";
+  $("audioPreview").removeAttribute("src");
+  $("audioPreview").hidden=true;
+  $("startRecording").disabled=false;
+  $("stopRecording").disabled=true;
+  $("playRecording").disabled=true;
+  $("submitRecording").disabled=true;
+  $("submitStatus").className="muted";
+  $("submitStatus").textContent="No recording yet.";
+}
+async function selectPracticeDay(day){
+  selectedDay=Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,Number(day)||currentDay));
+  localStorage.setItem("osotua_selected_day",String(selectedDay));
+  $("practiceDaySelect").value=String(selectedDay);
+  resetMainRecording();
+  await loadSelectedContent();
+  await Promise.all([loadMyProgress(),loadCommunity()]);
 }
 function updateCoachVisibility(){
   const pid=$("participantSelect").value;
@@ -201,27 +228,43 @@ async function loadSettings(){
     if(!settings)throw error;
   }
   currentDay=settings.auto_advance?calculatedDay(settings.start_date):settings.current_day;
-  $("dayModeBadge").textContent=settings.auto_advance?"Automatic":"Manual";
-  $("dayModeBadge").className=`mode-badge ${settings.auto_advance?"auto":""}`;
 }
 async function loadContent(){
   try{
-    const{data,error}=await sb.from("memory_content").select("*").eq("day",currentDay).single();
+    const{data,error}=await sb.from("memory_content").select("*").eq("day",adminDay).single();
     if(error)throw error;
     currentContent=data;
-    cacheSet(`content_${currentDay}`,data);
+    cacheSet(`content_${adminDay}`,data);
   }catch(error){
-    currentContent=cacheGet(`content_${currentDay}`);
+    currentContent=cacheGet(`content_${adminDay}`);
     if(!currentContent)throw error;
+  }
+}
+async function loadSelectedContent(){
+  try{
+    const{data,error}=await sb.from("memory_content").select("*").eq("day",selectedDay).single();
+    if(error)throw error;
+    selectedContent=data;
+    cacheSet(`content_${selectedDay}`,data);
+  }catch(error){
+    selectedContent=cacheGet(`content_${selectedDay}`);
+    if(!selectedContent)throw error;
   }
   renderContent();
 }
 function renderContent(){
-  if(!currentContent)return;
-  $("dayTitle").textContent=`Day ${currentDay} · ${currentContent.reference}`;
+  if(!selectedContent)return;
+  $("dayTitle").textContent=`Day ${selectedDay} · ${selectedContent.reference}`;
   const key={maa:"maa_text",en:"english_text",ko:"korean_text"}[currentLanguage];
-  $("verseText").textContent=currentContent[key]||"Content not added yet.";
-  $("adminCurrentDay").textContent=`Day ${currentDay}`;
+  $("verseText").textContent=selectedContent[key]||"Content not added yet.";
+  $("dayModeBadge").textContent=`Official Day ${currentDay}`;
+  $("dayModeBadge").className=`mode-badge ${settings?.auto_advance?"auto":""}`;
+  const relation=selectedDay===currentDay
+    ?"This is today’s official challenge Day."
+    :selectedDay>currentDay
+      ?`Early practice: this is ${selectedDay-currentDay} Day(s) ahead of the official schedule.`
+      :`Review: this is ${currentDay-selectedDay} Day(s) before the official schedule.`;
+  $("practiceDayHelp").textContent=relation+" You may record and submit this Day now.";
 }
 async function loadParticipants(){
   try{
@@ -239,22 +282,23 @@ async function loadParticipants(){
 }
 async function initialize(){
   populateCoachDays();
+  populatePracticeDays();
   try{
     await loadSettings();
-    await Promise.all([loadContent(),loadParticipants()]);
+    adminDay=currentDay;
+    const savedDay=Number(localStorage.getItem("osotua_selected_day"));
+    selectedDay=savedDay>=1&&savedDay<=OSOTUA_CONFIG.totalDays?savedDay:currentDay;
+    $("practiceDaySelect").value=String(selectedDay);
+    await Promise.all([loadContent(),loadSelectedContent(),loadParticipants()]);
     const saved=localStorage.getItem("osotua_participant");
     if(saved&&participantMap.has(saved)){
       $("participantSelect").value=saved;
-      await loadMyProgress();
+      await Promise.all([loadMyProgress(),loadCommunity(),loadLeaderboard()]);
+    }else{
+      $("communityCard").classList.add("hidden");
+      $("leaderboardCard").classList.add("hidden");
     }
     updateCoachVisibility();
-    if(navigator.onLine){
-      await Promise.all([loadCommunity(),loadLeaderboard()]);
-    }else{
-      $("communitySummary").textContent="Community status needs internet.";
-      $("communityList").innerHTML='<p class="muted">Your offline recording can still be saved and synced later.</p>';
-      $("leaderboard").innerHTML='<p class="muted">Leaderboard needs internet.</p>';
-    }
     await updatePendingUI();
   }catch(e){
     console.error(e);
@@ -265,7 +309,12 @@ async function initialize(){
 
 async function loadMyProgress(){
   const pid=$("participantSelect").value;
-  if(!pid){$("myProgress").classList.add("hidden");return;}
+  if(!pid){
+    $("myProgress").classList.add("hidden");
+    $("communityCard").classList.add("hidden");
+    $("leaderboardCard").classList.add("hidden");
+    return;
+  }
   let data;
   try{
     const result=await sb.from("memory_submissions").select("day").eq("participant_id",pid);
@@ -288,8 +337,10 @@ async function loadMyProgress(){
   $("progressPercent").textContent=`${pct}%`;
   $("streakCount").textContent=streak;
   $("dayGrid").innerHTML=Array.from({length:50},(_,i)=>i+1)
-    .map(d=>`<div class="day ${set.has(d)?"done":""} ${d===currentDay?"today":""}">${d}</div>`).join("");
+    .map(d=>`<button type="button" data-day="${d}" title="Practice Day ${d}" class="day ${set.has(d)?"done":""} ${d===currentDay?"today":""} ${d===selectedDay?"selected":""}">${d}</button>`).join("");
   $("myProgress").classList.remove("hidden");
+  $("communityCard").classList.remove("hidden");
+  $("leaderboardCard").classList.remove("hidden");
 }
 
 async function startRecording(){
@@ -362,25 +413,26 @@ async function queueCurrentRecording(reason){
     id:newId(),
     participantId:pid,
     participantName:name,
-    day:currentDay,
-    verseNumber:currentContent.verse_number,
-    reference:currentContent.reference,
+    day:selectedDay,
+    verseNumber:selectedContent.verse_number,
+    reference:selectedContent.reference,
     blob:audioBlob,
     mimeType:audioBlob.type||"audio/webm",
-    path:`${name.replace(/[^a-zA-Z0-9_-]/g,"_")}/day-${currentDay}-${timestamp}.webm`,
+    path:`${name.replace(/[^a-zA-Z0-9_-]/g,"_")}/day-${selectedDay}-${timestamp}.webm`,
     submittedAt:new Date().toISOString(),
     uploaded:false,
     queuedReason:reason||"offline"
   };
   await OSOTUA_QUEUE.add(item);
-  $("submitStatus").textContent="Saved on this device. It will sync when internet is available.";
+  $("submitStatus").textContent=`Day ${selectedDay} saved on this device. It will sync when internet is available.`;
   $("submitStatus").className="warn";
-  await Promise.all([updatePendingUI(),loadMyProgress()]);
+  await Promise.all([updatePendingUI(),loadMyProgress(),loadCommunity(),loadLeaderboard()]);
 }
 async function submitRecording(){
   const pid=$("participantSelect").value;
   if(!pid)return alert("Select your name.");
   if(!audioBlob)return alert("Record first.");
+  if(!selectedContent)return alert("Select a valid Practice Day.");
 
   $("submitRecording").disabled=true;
 
@@ -396,23 +448,23 @@ async function submitRecording(){
     id:newId(),
     participantId:pid,
     participantName:name,
-    day:currentDay,
-    verseNumber:currentContent.verse_number,
-    reference:currentContent.reference,
+    day:selectedDay,
+    verseNumber:selectedContent.verse_number,
+    reference:selectedContent.reference,
     blob:audioBlob,
     mimeType:audioBlob.type||"audio/webm",
-    path:`${name.replace(/[^a-zA-Z0-9_-]/g,"_")}/day-${currentDay}-${timestamp}.webm`,
+    path:`${name.replace(/[^a-zA-Z0-9_-]/g,"_")}/day-${selectedDay}-${timestamp}.webm`,
     submittedAt:new Date().toISOString(),
     uploaded:false
   };
 
   try{
     $("submitStatus").className="muted";
-    $("submitStatus").textContent="Uploading…";
+    $("submitStatus").textContent=`Uploading Day ${selectedDay}…`;
     await OSOTUA_QUEUE.add(item);
     await uploadAndSave(item);
     await OSOTUA_QUEUE.remove(item.id);
-    $("submitStatus").textContent="✓ Submitted successfully";
+    $("submitStatus").textContent=`✓ Day ${selectedDay} submitted successfully`;
     $("submitStatus").className="pass";
     await Promise.all([updatePendingUI(),loadCommunity(),loadMyProgress(),loadLeaderboard()]);
   }catch(e){
@@ -478,45 +530,62 @@ async function signed(path){
   return data.signedUrl;
 }
 async function loadCommunity(){
-  if(!navigator.onLine){
-    $("communitySummary").textContent="Community status needs internet.";
+  const pid=$("participantSelect").value;
+  if(!pid){
+    $("communityCard").classList.add("hidden");
     return;
   }
-  const{data:rows,error}=await sb.from("memory_submissions")
-    .select("participant_id,recording_path,submitted_at").eq("day",currentDay);
-  if(error)throw error;
-
-  const m=new Map(rows.map(r=>[r.participant_id,r]));
-  $("communitySummary").textContent=`${rows.length} / ${participants.length} submitted`;
-  let html="";
-  for(const p of participants){
-    const r=m.get(p.id);
-    if(!r){
-      html+=`<div class="person-row"><span>${p.name}</span><strong>○ Not submitted</strong></div>`;
-      continue;
-    }
-    let player;
-    try{player=`<audio controls src="${await signed(r.recording_path)}"></audio>`;}
-    catch{player='<span class="fail">Audio unavailable</span>';}
-    html+=`<div class="person-row"><span><strong>${p.name}</strong><br>
-      <span class="pass">✓ Submitted</span><br>
-      <small>${new Date(r.submitted_at).toLocaleString()}</small></span>${player}</div>`;
+  $("communityCard").classList.remove("hidden");
+  const name=participantMap.get(pid);
+  $("communitySummary").textContent=`${name} · Day ${selectedDay}`;
+  if(!navigator.onLine){
+    const pending=await OSOTUA_QUEUE.all();
+    const waiting=pending.find(x=>x.participantId===pid&&x.day===selectedDay);
+    $("communityList").innerHTML=waiting
+      ?'<p class="warn"><strong>Saved offline and waiting to sync.</strong></p>'
+      :'<p class="muted">Connect to the internet to check your submitted recording.</p>';
+    return;
   }
-  $("communityList").innerHTML=html;
+  const{data:r,error}=await sb.from("memory_submissions")
+    .select("recording_path,submitted_at")
+    .eq("participant_id",pid).eq("day",selectedDay).maybeSingle();
+  if(error)throw error;
+  if(!r){
+    $("communityList").innerHTML='<p><strong>○ You have not submitted this Day yet.</strong></p>';
+    return;
+  }
+  let player='<span class="fail">Audio unavailable</span>';
+  try{player=`<audio controls src="${await signed(r.recording_path)}"></audio>`;}catch{}
+  $("communityList").innerHTML=`<div class="person-row"><span><strong>${name}</strong><br>
+    <span class="pass">✓ Day ${selectedDay} submitted</span><br>
+    <small>${new Date(r.submitted_at).toLocaleString()}</small></span>${player}</div>`;
 }
 async function loadLeaderboard(){
-  if(!navigator.onLine)return;
-  const{data,error}=await sb.from("memory_submissions").select("participant_id,day");
-  if(error)return;
-  const sets=new Map();
-  data.forEach(r=>{
-    if(!sets.has(r.participant_id))sets.set(r.participant_id,new Set());
-    sets.get(r.participant_id).add(r.day);
-  });
-  const ranked=participants.map(p=>({name:p.name,count:sets.get(p.id)?.size||0}))
-    .sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name));
-  $("leaderboard").innerHTML=ranked
-    .map((r,i)=>`<div class="rank-row"><span><strong>${i+1}. ${r.name}</strong></span><span>${r.count} / 50</span></div>`).join("");
+  const pid=$("participantSelect").value;
+  if(!pid){
+    $("leaderboardCard").classList.add("hidden");
+    return;
+  }
+  $("leaderboardCard").classList.remove("hidden");
+  let rows=[];
+  try{
+    const{data,error}=await sb.from("memory_submissions").select("day").eq("participant_id",pid);
+    if(error)throw error;
+    rows=data;
+  }catch{
+    rows=cacheGet(`progress_${pid}`)||[];
+  }
+  const pending=await OSOTUA_QUEUE.all();
+  pending.filter(x=>x.participantId===pid).forEach(x=>rows.push({day:x.day}));
+  const completed=[...new Set(rows.map(x=>x.day))].sort((a,b)=>a-b);
+  const pct=Math.round(completed.length/OSOTUA_CONFIG.totalDays*100);
+  $("leaderboard").innerHTML=`
+    <div class="private-overall">
+      <div><span>Participant</span><strong>${participantMap.get(pid)}</strong></div>
+      <div><span>Completed</span><strong>${completed.length} / ${OSOTUA_CONFIG.totalDays}</strong></div>
+      <div><span>Progress</span><strong>${pct}%</strong></div>
+    </div>
+    <p class="muted">Completed Days: ${completed.length?completed.join(", "):"None yet"}</p>`;
 }
 
 async function loadAdminReferencePreview(){
@@ -545,7 +614,7 @@ async function uploadReferenceAudio(){
   if(!file){$("referenceAudioAdminStatus").textContent="Choose an audio file first.";return;}
   if(file.size>10*1024*1024){$("referenceAudioAdminStatus").textContent="The file must be smaller than 10 MB.";return;}
   const ext=(file.name.split(".").pop()||"webm").replace(/[^a-zA-Z0-9]/g,"");
-  const path=`day-${currentDay}/reference-${Date.now()}.${ext}`;
+  const path=`day-${adminDay}/reference-${Date.now()}.${ext}`;
   $("referenceAudioAdminStatus").textContent="Uploading reference audio…";
   const{error:uploadError}=await sb.storage.from(OSOTUA_CONFIG.referenceBucket).upload(path,file,{contentType:file.type||"audio/webm"});
   if(uploadError){$("referenceAudioAdminStatus").textContent=uploadError.message;return;}
@@ -555,7 +624,7 @@ async function uploadReferenceAudio(){
     reference_speaker:$("referenceSpeaker").value.trim(),
     updated_at:new Date().toISOString()
   };
-  const{error:updateError}=await sb.from("memory_content").update(payload).eq("day",currentDay);
+  const{error:updateError}=await sb.from("memory_content").update(payload).eq("day",adminDay);
   if(updateError){$("referenceAudioAdminStatus").textContent=updateError.message;return;}
   if(oldPath && oldPath!==path){
     await sb.storage.from(OSOTUA_CONFIG.referenceBucket).remove([oldPath]);
@@ -563,8 +632,9 @@ async function uploadReferenceAudio(){
   $("referenceAudioFile").value="";
   $("referenceAudioAdminStatus").textContent="Reference audio uploaded.";
   await loadContent();
+  if(selectedDay===adminDay)await loadSelectedContent();
   await loadAdminReferencePreview();
-  if(coachDay===currentDay)await loadCoachDay(coachDay);
+  if(coachDay===adminDay)await loadCoachDay(coachDay);
 }
 async function removeReferenceAudio(){
   if(!navigator.onLine)return alert("Internet connection is required.");
@@ -573,15 +643,21 @@ async function removeReferenceAudio(){
   if(!confirm("Remove the reference audio for this Day?"))return;
   const{error:updateError}=await sb.from("memory_content")
     .update({reference_audio_path:"",reference_speaker:"",updated_at:new Date().toISOString()})
-    .eq("day",currentDay);
+    .eq("day",adminDay);
   if(updateError){$("referenceAudioAdminStatus").textContent=updateError.message;return;}
   await sb.storage.from(OSOTUA_CONFIG.referenceBucket).remove([path]);
   $("referenceAudioAdminStatus").textContent="Reference audio removed.";
   await loadContent();
+  if(selectedDay===adminDay)await loadSelectedContent();
   await loadAdminReferencePreview();
-  if(coachDay===currentDay)await loadCoachDay(coachDay);
+  if(coachDay===adminDay)await loadCoachDay(coachDay);
 }
 
+async function changeAdminDay(day){
+  adminDay=Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,Number(day)||adminDay));
+  await loadContent();
+  await renderAdmin();
+}
 function openAdmin(){$("adminModal").classList.remove("hidden");}
 function closeAdmin(){$("adminModal").classList.add("hidden");}
 function adminLogin(){
@@ -594,7 +670,7 @@ function adminLogin(){
   renderAdmin();
 }
 async function renderAdmin(){
-  $("adminCurrentDay").textContent=`Day ${currentDay}`;
+  $("adminCurrentDay").textContent=`Day ${adminDay}`;
   $("autoAdvance").checked=!!settings.auto_advance;
   $("startDate").value=settings.start_date||localDateString();
 
@@ -607,39 +683,72 @@ async function renderAdmin(){
   if(!navigator.onLine){
     $("adminStats").innerHTML='<div><span>Status</span><strong>Offline</strong></div>';
     $("missingParticipants").innerHTML='<span class="muted">Admin changes need internet.</span>';
+    $("adminDayList").innerHTML='';
+    $("adminOverallProgress").innerHTML='';
     return;
   }
 
-  const{data}=await sb.from("participants").select("id,name,active").order("name");
+  const{data,error:participantError}=await sb.from("participants").select("id,name,active").order("name");
+  if(participantError)throw participantError;
   $("adminParticipants").innerHTML=data.map(p=>`
     <div class="admin-person">
       <span>${p.name} ${p.active?"":"(inactive)"}</span>
       <button class="secondary" onclick="toggleParticipant('${p.id}',${!p.active})">${p.active?"Disable":"Enable"}</button>
     </div>`).join("");
 
-  const{data:todayRows}=await sb.from("memory_submissions").select("participant_id").eq("day",currentDay);
-  const submitted=new Set((todayRows||[]).map(x=>x.participant_id));
+  const{data:dayRows,error:dayError}=await sb.from("memory_submissions")
+    .select("participant_id,recording_path,submitted_at").eq("day",adminDay);
+  if(dayError)throw dayError;
+  const submittedMap=new Map((dayRows||[]).map(x=>[x.participant_id,x]));
   const active=data.filter(x=>x.active);
-  const missing=active.filter(x=>!submitted.has(x.id));
+  const missing=active.filter(x=>!submittedMap.has(x.id));
 
   $("adminStats").innerHTML=`
-    <div><span>Submitted Today</span><strong>${submitted.size}</strong></div>
+    <div><span>Submitted</span><strong>${submittedMap.size}</strong></div>
     <div><span>Participants</span><strong>${active.length}</strong></div>
-    <div><span>Current Day</span><strong>${currentDay}</strong></div>`;
+    <div><span>Admin Day</span><strong>${adminDay}</strong></div>`;
 
   $("missingParticipants").innerHTML=missing.length
-    ? missing.map(x=>`<span class="missing-name">${x.name}</span>`).join("")
-    : '<span class="pass"><strong>Everyone submitted.</strong></span>';
+    ?missing.map(x=>`<span class="missing-name">${x.name}</span>`).join("")
+    :'<span class="pass"><strong>Everyone submitted.</strong></span>';
+
+  let dayHtml="";
+  for(const p of active){
+    const row=submittedMap.get(p.id);
+    if(!row){
+      dayHtml+=`<div class="person-row"><span>${p.name}</span><strong>○ Not submitted</strong></div>`;
+      continue;
+    }
+    let player='<span class="fail">Audio unavailable</span>';
+    try{player=`<audio controls src="${await signed(row.recording_path)}"></audio>`;}catch{}
+    dayHtml+=`<div class="person-row"><span><strong>${p.name}</strong><br><span class="pass">✓ Submitted</span><br><small>${new Date(row.submitted_at).toLocaleString()}</small></span>${player}</div>`;
+  }
+  $("adminDayList").innerHTML=dayHtml;
+
+  const{data:allRows,error:allError}=await sb.from("memory_submissions").select("participant_id,day");
+  if(allError)throw allError;
+  const sets=new Map();
+  (allRows||[]).forEach(row=>{
+    if(!sets.has(row.participant_id))sets.set(row.participant_id,new Set());
+    sets.get(row.participant_id).add(row.day);
+  });
+  $("adminOverallProgress").innerHTML=active
+    .map(p=>{
+      const count=sets.get(p.id)?.size||0;
+      return `<div class="rank-row"><span><strong>${p.name}</strong></span><span>${count} / ${OSOTUA_CONFIG.totalDays} · ${Math.round(count/OSOTUA_CONFIG.totalDays*100)}%</span></div>`;
+    }).join("");
 }
 async function saveSchedule(){
   if(!navigator.onLine)return alert("Internet connection is required.");
   const auto=$("autoAdvance").checked;
   const start=$("startDate").value||localDateString();
-  const payload={current_day:currentDay,auto_advance:auto,start_date:start,updated_at:new Date().toISOString()};
+  const payload={current_day:adminDay,auto_advance:auto,start_date:start,updated_at:new Date().toISOString()};
   const{error}=await sb.from("project_settings").update(payload).eq("id",1);
   $("scheduleSaveStatus").textContent=error?error.message:"Schedule saved.";
   if(!error){
-    await loadSettings();await loadContent();
+    await loadSettings();
+    adminDay=currentDay;
+    await Promise.all([loadContent(),loadSelectedContent()]);
     await Promise.all([loadCommunity(),loadMyProgress(),loadLeaderboard()]);
     renderAdmin();
   }
@@ -653,9 +762,12 @@ async function saveContent(){
     korean_text:$("editKorean").value.trim(),
     updated_at:new Date().toISOString()
   };
-  const{error}=await sb.from("memory_content").update(payload).eq("day",currentDay);
+  const{error}=await sb.from("memory_content").update(payload).eq("day",adminDay);
   $("contentSaveStatus").textContent=error?error.message:"Content saved.";
-  if(!error)await loadContent();
+  if(!error){
+    await loadContent();
+    if(selectedDay===adminDay)await loadSelectedContent();
+  }
 }
 async function addParticipant(){
   if(!navigator.onLine)return alert("Internet connection is required.");
@@ -684,10 +796,15 @@ document.querySelectorAll(".lang").forEach(btn=>{
   };
 });
 
-$("participantSelect").onchange=()=>{
+$("participantSelect").onchange=async()=>{
   localStorage.setItem("osotua_participant",$("participantSelect").value);
-  loadMyProgress();
+  await Promise.all([loadMyProgress(),loadCommunity(),loadLeaderboard()]);
   updateCoachVisibility();
+};
+$("practiceDaySelect").onchange=()=>selectPracticeDay($("practiceDaySelect").value);
+$("dayGrid").onclick=event=>{
+  const button=event.target.closest("[data-day]");
+  if(button)selectPracticeDay(button.dataset.day);
 };
 $("startRecording").onclick=startRecording;
 $("stopRecording").onclick=stopRecording;
@@ -700,7 +817,7 @@ $("toggleCoach").onclick=()=>{
   $("coachBody").classList.toggle("hidden");
   $("toggleCoach").textContent=$("coachBody").classList.contains("hidden")?"Open Coach":"Close Coach";
   if(!$("coachBody").classList.contains("hidden")){
-    const requested=Number($("coachDaySelect").value||Math.min(currentDay,2));
+    const requested=Number($("coachDaySelect").value||selectedDay);
     $("coachDaySelect").value=String(requested);
     loadCoachDay(requested);
   }
@@ -719,8 +836,8 @@ $("revealCoachAnswer").onclick=()=>{
 $("openAdmin").onclick=openAdmin;
 $("closeAdmin").onclick=closeAdmin;
 $("adminLoginButton").onclick=adminLogin;
-$("previousDay").onclick=()=>{currentDay=Math.max(1,currentDay-1);$("adminCurrentDay").textContent=`Day ${currentDay}`;};
-$("nextDay").onclick=()=>{currentDay=Math.min(50,currentDay+1);$("adminCurrentDay").textContent=`Day ${currentDay}`;};
+$("previousDay").onclick=()=>changeAdminDay(adminDay-1);
+$("nextDay").onclick=()=>changeAdminDay(adminDay+1);
 $("saveSchedule").onclick=saveSchedule;
 $("saveContent").onclick=saveContent;
 $("uploadReferenceAudio").onclick=uploadReferenceAudio;

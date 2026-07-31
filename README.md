@@ -1,26 +1,29 @@
-# OSOTUA Bible Memory Platform V5.1
+# OSOTUA Bible Memory Platform V5.2
 
 ## New
-- Reference Maa audio for each Day
-- Administrator upload / replace / remove controls
-- Optional speaker name
-- Korean Learner Coach compares the model recording with a private practice recording
-- Dedicated practice recorder does not upload or affect Community progress
-- All V5.0 Memory Coach, PWA, offline queue, multilingual content and Admin features retained
+- Participants can choose any Practice Day from Day 1 to Day 50.
+- Clicking a numbered Day tile also opens that Day.
+- The selected Day verse is shown in Maa, English and Korean.
+- Recordings and submissions are saved under the selected Day, including future Days.
+- The participant screen shows only the selected participant’s own Day submission.
+- The participant screen shows only the selected participant’s own overall progress.
+- Full Day status, recordings and all-participant overall progress remain available in Admin.
+- V5.1 reference audio, Memory Coach, PWA and offline queue remain available.
 
-## Required
-Run `sql/v5_1_reference_audio.sql` once in Supabase SQL Editor.
+## SQL
+No additional SQL is required for V5.2. Use the same Supabase database from V5.1.
+
+## Deploy
+Upload all files and folders to the GitHub repository and commit. Vercel deploys automatically.
 
 ## Test
-1. Deploy all files to GitHub.
-2. Open Admin with PIN `0808`.
-3. On the current Day, choose an Maa reference audio file and speaker name.
-4. Press **Upload / Replace**.
-5. Select `SON`, open the Memory Coach, and choose the same Practice Day.
-6. Play the reference audio, record a private practice attempt, and compare them.
+1. Select a participant.
+2. Choose Day 3 or Day 4 from **Choose a Day to practice or submit**.
+3. Confirm the verse changes.
+4. Record and submit.
+5. Confirm **My Selected Day Progress** shows only that participant.
+6. Confirm **My Overall Progress** shows only that participant.
+7. Open Admin and confirm the administrator can see all participants.
 
-## Audio note
-No reference recording is included in this package. Upload an original recording for which you have permission.
-
-## Prototype security note
-The current small-group prototype still uses public client write policies and a browser PIN. Before wider public launch, move Admin writes behind authenticated server-side functions.
+## Privacy limitation
+V5.2 removes other participants’ information from the normal participant screen. It is not full identity security because the current prototype still allows a visitor to select another participant name and the Supabase prototype policies remain public. Participant PIN/login and authenticated RLS must be added before public or sensitive use.

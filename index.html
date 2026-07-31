@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSOTUA V5.1</title>
+<title>OSOTUA V5.2</title>
 <meta name="theme-color" content="#5e4930">
 <meta name="description" content="Maasai Bible Memory Platform — Romans 8, 50 Day Challenge">
 <link rel="manifest" href="manifest.webmanifest">
@@ -15,7 +15,7 @@
 <header class="topbar">
   <div>
     <div class="brand">OSOTUA Bible Memory</div>
-    <div class="subtitle">Romans 8 · 50 Day Challenge · V5.1</div>
+    <div class="subtitle">Romans 8 · 50 Day Challenge · V5.2</div>
   </div>
   <div class="header-actions">
     <span id="networkBadge" class="badge">Checking…</span>
@@ -52,11 +52,15 @@
 <section class="card">
   <div class="today-heading">
     <div>
-      <p class="eyebrow">TODAY</p>
+      <p class="eyebrow">PRACTICE DAY</p>
       <h2 id="dayTitle">Loading…</h2>
     </div>
-    <span id="dayModeBadge" class="mode-badge">Manual</span>
+    <span id="dayModeBadge" class="mode-badge">Official Day</span>
   </div>
+
+  <label for="practiceDaySelect">Choose a Day to practice or submit</label>
+  <select id="practiceDaySelect"></select>
+  <p id="practiceDayHelp" class="help"></p>
 
   <div class="language-tabs">
     <button class="lang active" data-lang="maa">Maa</button>
@@ -148,18 +152,20 @@
   <div id="pendingList"></div>
 </section>
 
-<section class="card">
+<section id="communityCard" class="card hidden">
   <div class="section-heading">
-    <div><p class="eyebrow">COMMUNITY</p><h2>Today’s Progress</h2></div>
+    <div><p class="eyebrow">PRIVATE</p><h2>My Selected Day Progress</h2></div>
     <button id="refreshCommunity" class="secondary">Refresh</button>
   </div>
+  <p class="privacy-note">Only the selected participant’s own submission is shown here.</p>
   <p id="communitySummary" class="summary">Loading…</p>
   <div id="communityList"></div>
 </section>
 
-<section class="card">
-  <p class="eyebrow">LEADERBOARD</p>
-  <h2>Overall Progress</h2>
+<section id="leaderboardCard" class="card hidden">
+  <p class="eyebrow">PRIVATE</p>
+  <h2>My Overall Progress</h2>
+  <p class="privacy-note">Other participants’ progress is not shown on this screen.</p>
   <div id="leaderboard"></div>
 </section>
 </main>
@@ -231,6 +237,13 @@
         <div id="adminStats" class="mini-stats"></div>
         <h4>Not submitted</h4>
         <div id="missingParticipants" class="missing-list"></div>
+        <h4>All participants — selected Admin Day</h4>
+        <div id="adminDayList"></div>
+      </div>
+
+      <div class="admin-section">
+        <h3>All Participant Overall Progress</h3>
+        <div id="adminOverallProgress"></div>
       </div>
 
       <div class="admin-section">

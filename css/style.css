@@ -15,7 +15,7 @@ button{background:var(--accent);color:#fff;font-weight:800;cursor:pointer}button
 .hidden{display:none!important}.progress-card{margin-top:14px;padding:16px;border-radius:14px;background:var(--soft)}
 .progress-meta{display:flex;justify-content:space-between}.progress-bar{height:14px;border-radius:999px;background:#e3ded3;overflow:hidden;margin:10px 0}.progress-bar>div{height:100%;width:0;background:var(--ok)}
 .mini-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.mini-stats>div{padding:10px;background:var(--soft);border-radius:10px;text-align:center}.mini-stats span{display:block;font-size:.78rem;color:var(--muted)}
-.day-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}.day{aspect-ratio:1;border-radius:8px;background:#e8e3d8;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800}.day.done{background:#dff3e7;color:var(--ok)}.day.today{outline:2px solid var(--accent)}
+.day-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}.day{aspect-ratio:1;border-radius:8px;background:#e8e3d8;color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;padding:0;border:1px solid transparent}.day.done{background:#dff3e7;color:var(--ok)}.day.today{box-shadow:inset 0 0 0 2px #9a6700}.day.selected{outline:3px solid var(--accent);outline-offset:1px}.day:hover{transform:translateY(-1px)}
 .language-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.lang.active{background:var(--accent);color:#fff}.lang.secondary{background:#e7e1d5;color:#222}
 .verse{font-size:1.18rem;line-height:1.8;font-weight:650;background:var(--soft);padding:14px;border-radius:12px}
 .timer{text-align:center;font-size:2rem;margin:12px 0}.actions{display:flex;flex-wrap:wrap;gap:8px}audio{width:100%;margin-top:12px}
@@ -43,3 +43,5 @@ label{display:block;font-weight:800;margin:10px 0 5px}.check-row{display:flex;al
 .compare-box h3{margin-top:0}
 .compare-box audio{margin-top:10px}
 @media(max-width:650px){.compare-grid{grid-template-columns:1fr}}
+
+#practiceDaySelect{margin-bottom:6px}.privacy-note{padding:10px 12px;border-radius:10px;background:var(--soft);color:var(--muted);font-size:.9rem}.private-overall{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}.private-overall>div{padding:12px;background:var(--soft);border-radius:10px;text-align:center}.private-overall span{display:block;color:var(--muted);font-size:.78rem}.private-overall strong{display:block;margin-top:4px}@media(max-width:650px){.private-overall{grid-template-columns:1fr}}

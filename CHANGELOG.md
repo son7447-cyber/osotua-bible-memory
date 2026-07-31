@@ -1,8 +1,14 @@
 # Changelog
 
+## V5.2
+- Any-Day verse selection and future practice submissions
+- Clickable 50-Day grid
+- Selected-Day recording and offline queue
+- Participant-only progress views on the normal screen
+- Administrator-only all-participant progress views
+
 ## V5.1
-- Added per-Day Maa reference audio storage
-- Added Admin upload, replace and remove workflow
-- Added speaker label
-- Added model-versus-practice audio comparison in Korean Learner Mode
-- Added a private local practice recorder
+- Reference Maa audio upload and comparison
+
+## V5.0
+- Korean Learner Memory Coach
