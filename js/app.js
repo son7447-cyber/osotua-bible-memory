@@ -375,6 +375,7 @@ async function loadSelectedContent(){
     if(!data?.length)throw new Error("No verse content is available for this date.");
     selectedContent={
       day:selectedDay,
+      verse_number:selectedVerseEnd,
       reference:selectedVerseEnd===1?"Romans 8:1":`Romans 8:1–${selectedVerseEnd}`,
       maa_text:data.map(x=>x.maa_text||"").filter(Boolean).join(" "),
       english_text:data.map(x=>x.english_text||"").filter(Boolean).join(" "),
@@ -386,6 +387,7 @@ async function loadSelectedContent(){
     if(!cached?.length)throw error;
     selectedContent={
       day:selectedDay,
+      verse_number:selectedVerseEnd,
       reference:selectedVerseEnd===1?"Romans 8:1":`Romans 8:1–${selectedVerseEnd}`,
       maa_text:cached.map(x=>x.maa_text||"").filter(Boolean).join(" "),
       english_text:cached.map(x=>x.english_text||"").filter(Boolean).join(" "),
@@ -480,16 +482,16 @@ async function loadMyProgress(){
   const pending=await OSOTUA_QUEUE.all();
   pending.filter(x=>x.participantId===pid).forEach(x=>data.push({day:x.day}));
 
-  const done=[...new Set(data.map(x=>x.day))],set=new Set(done),pct=Math.round(done.length/50*100);
+  const done=[...new Set(data.map(x=>x.day))],set=new Set(done),pct=Math.round(done.length/OSOTUA_CONFIG.totalDays*100);
   let streak=0;
   for(let d=currentDay;d>=1;d--){if(set.has(d))streak++;else break;}
   $("progressName").textContent=participantMap.get(pid);
-  $("progressText").textContent=`${done.length} / 50`;
+  $("progressText").textContent=`${done.length} / ${OSOTUA_CONFIG.totalDays}`;
   $("progressFill").style.width=`${pct}%`;
   $("completedDays").textContent=done.length;
   $("progressPercent").textContent=`${pct}%`;
   $("streakCount").textContent=streak;
-  $("dayGrid").innerHTML=Array.from({length:50},(_,i)=>i+1)
+  $("dayGrid").innerHTML=Array.from({length:OSOTUA_CONFIG.totalDays},(_,i)=>i+1)
     .map(d=>`<button type="button" data-day="${d}" title="Practice Day ${d}" class="day ${set.has(d)?"done":""} ${d===currentDay?"today":""} ${d===selectedDay?"selected":""}">${d}</button>`).join("");
   $("myProgress").classList.remove("hidden");
   $("communityCard").classList.remove("hidden");
@@ -537,6 +539,9 @@ function stopRecording(){
   $("stopRecording").disabled=true;
 }
 async function uploadAndSave(item){
+  const recoveredVerseNumber=Number(item.verseNumber)||scheduleForDay(item.day).verseEnd;
+  item.verseNumber=recoveredVerseNumber;
+  await OSOTUA_QUEUE.update(item);
   let uploaded=item.uploaded||false;
   if(!uploaded){
     const{error}=await sb.storage.from(OSOTUA_CONFIG.bucket).upload(
@@ -552,7 +557,7 @@ async function uploadAndSave(item){
   if(q)throw q;
 
   const payload={
-    verse:item.verseNumber,
+    verse:recoveredVerseNumber,
     recording_path:item.path,
     submitted_at:item.submittedAt
   };
@@ -572,7 +577,7 @@ async function queueCurrentRecording(reason){
     participantId:pid,
     participantName:name,
     day:selectedDay,
-    verseNumber:selectedContent.verse_number,
+    verseNumber:selectedVerseEnd,
     reference:selectedContent.reference,
     blob:audioBlob,
     mimeType:audioBlob.type||"audio/webm",
@@ -607,7 +612,7 @@ async function submitRecording(){
     participantId:pid,
     participantName:name,
     day:selectedDay,
-    verseNumber:selectedContent.verse_number,
+    verseNumber:selectedVerseEnd,
     reference:selectedContent.reference,
     blob:audioBlob,
     mimeType:audioBlob.type||"audio/webm",
@@ -1053,8 +1058,16 @@ window.addEventListener("online",async()=>{
 window.addEventListener("offline",network);
 
 if("serviceWorker" in navigator){
+  let refreshingForUpdate=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(refreshingForUpdate)return;
+    refreshingForUpdate=true;
+    window.location.reload();
+  });
   window.addEventListener("load",()=>{
-    navigator.serviceWorker.register("./sw.js").catch(console.error);
+    navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"})
+      .then(registration=>registration.update())
+      .catch(console.error);
   });
 }
 
