@@ -3,6 +3,7 @@ const $=id=>document.getElementById(id);
 
 let participants=[],participantMap=new Map();
 let settings=null,currentDay=1,adminDay=1,currentContent=null,selectedDay=1,selectedContent=null,currentLanguage="maa";
+let currentMode="study",practiceMaskLevel="full",practiceOverrides=new Map();
 let currentCoach=null,coachVerse=null,coachDay=1,coachTimerId=null,coachSeconds=30;
 let practiceRecorder=null,practiceStream=null,practiceChunks=[],practiceBlob=null;
 let mediaRecorder=null,stream=null,chunks=[],audioBlob=null,timerId=null,seconds=0;
@@ -37,6 +38,102 @@ function newId(){
 }
 
 
+function selectedVerseText(language=currentLanguage){
+  if(!selectedContent)return "";
+  const key={maa:"maa_text",en:"english_text",ko:"korean_text"}[language]||"maa_text";
+  return selectedContent[key]||"Content not added yet.";
+}
+function setMode(mode,{save=true}={}){
+  if(!["study","practice","recite"].includes(mode))mode="study";
+  if(currentMode==="recite" && mode!=="recite" && mediaRecorder?.state==="recording")stopRecording();
+  currentMode=mode;
+  ["study","practice","recite"].forEach(name=>{
+    $(`${name}View`).classList.toggle("hidden",name!==mode);
+  });
+  document.querySelectorAll(".mode-tab").forEach(button=>{
+    const active=button.dataset.mode===mode;
+    button.classList.toggle("active",active);
+    button.classList.toggle("secondary",!active);
+    button.setAttribute("aria-selected",String(active));
+  });
+  if(mode==="practice")renderPracticeText();
+  if(mode==="recite"){
+    $("reciteAnswer").textContent="";
+    $("reciteAnswer").classList.add("hidden");
+  }
+  if(save)localStorage.setItem("osotua_memory_mode",mode);
+}
+function maskWord(word,initialOnly=false){
+  let firstKept=false;
+  return Array.from(word).map(char=>{
+    if(/[\p{L}\p{N}]/u.test(char)){
+      if(initialOnly&&!firstKept){firstKept=true;return char;}
+      return "_";
+    }
+    return char;
+  }).join("");
+}
+function defaultWordMasked(index){
+  const score=(index*37+selectedDay*19+currentLanguage.length*11)%100;
+  if(practiceMaskLevel==="light")return score<25;
+  if(practiceMaskLevel==="half")return score<50;
+  if(practiceMaskLevel==="heavy")return score<75;
+  if(practiceMaskLevel==="initials")return true;
+  return false;
+}
+function wordIsMasked(index){
+  return practiceOverrides.has(index)?practiceOverrides.get(index):defaultWordMasked(index);
+}
+function renderPracticeText(){
+  const box=$("practiceVerse");
+  if(!box)return;
+  const words=selectedVerseText().trim().split(/\s+/).filter(Boolean);
+  box.innerHTML="";
+  let maskedCount=0;
+  words.forEach((word,index)=>{
+    const masked=wordIsMasked(index);
+    if(masked)maskedCount++;
+    const button=document.createElement("button");
+    button.type="button";
+    button.className=`practice-word ${masked?"masked":""}`;
+    button.dataset.practiceIndex=String(index);
+    button.dataset.masked=String(masked);
+    button.textContent=masked?maskWord(word,practiceMaskLevel==="initials"):word;
+    button.title=masked?"Tap to reveal":"Tap to hide";
+    box.appendChild(button);
+  });
+  const labels={
+    full:"Full verse",
+    light:"A little hidden",
+    half:"Half hidden",
+    heavy:"Most words hidden",
+    initials:"First letters only"
+  };
+  $("practiceMaskStatus").textContent=`${labels[practiceMaskLevel]} · ${maskedCount} of ${words.length} words hidden`;
+}
+function setPracticeMask(level){
+  if(!["full","light","half","heavy","initials"].includes(level))level="full";
+  practiceMaskLevel=level;
+  practiceOverrides.clear();
+  document.querySelectorAll(".mask-button").forEach(button=>{
+    const active=button.dataset.mask===level;
+    button.classList.toggle("active",active);
+    button.classList.toggle("secondary",!active);
+  });
+  renderPracticeText();
+}
+function revealFirstWordHints(){
+  const words=selectedVerseText().trim().split(/\s+/).filter(Boolean);
+  words.forEach((word,index)=>{
+    if(index===0 || /[.!?;:]$/.test(words[index-1]||""))practiceOverrides.set(index,false);
+  });
+  renderPracticeText();
+}
+function resetPracticeWords(){
+  practiceOverrides.clear();
+  renderPracticeText();
+}
+
 function splitLines(text){
   return (text||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
 }
@@ -66,11 +163,15 @@ function resetMainRecording(){
   $("submitRecording").disabled=true;
   $("submitStatus").className="muted";
   $("submitStatus").textContent="No recording yet.";
+  $("reciteAnswer").textContent="";
+  $("reciteAnswer").classList.add("hidden");
+  $("revealAfterRecording").disabled=true;
 }
 async function selectPracticeDay(day){
   selectedDay=Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,Number(day)||currentDay));
   localStorage.setItem("osotua_selected_day",String(selectedDay));
   $("practiceDaySelect").value=String(selectedDay);
+  practiceOverrides.clear();
   resetMainRecording();
   await loadSelectedContent();
   await Promise.all([loadMyProgress(),loadCommunity()]);
@@ -255,8 +356,13 @@ async function loadSelectedContent(){
 function renderContent(){
   if(!selectedContent)return;
   $("dayTitle").textContent=`Day ${selectedDay} · ${selectedContent.reference}`;
-  const key={maa:"maa_text",en:"english_text",ko:"korean_text"}[currentLanguage];
-  $("verseText").textContent=selectedContent[key]||"Content not added yet.";
+  $("verseText").textContent=selectedVerseText();
+  $("reciteReference").textContent=selectedContent.reference||`Romans 8:${selectedDay}`;
+  $("reciteAnswer").textContent="";
+  $("reciteAnswer").classList.add("hidden");
+  $("revealAfterRecording").disabled=true;
+  practiceOverrides.clear();
+  renderPracticeText();
   $("dayModeBadge").textContent=`Official Day ${currentDay}`;
   $("dayModeBadge").className=`mode-badge ${settings?.auto_advance?"auto":""}`;
   const relation=selectedDay===currentDay
@@ -264,7 +370,7 @@ function renderContent(){
     :selectedDay>currentDay
       ?`Early practice: this is ${selectedDay-currentDay} Day(s) ahead of the official schedule.`
       :`Review: this is ${currentDay-selectedDay} Day(s) before the official schedule.`;
-  $("practiceDayHelp").textContent=relation+" You may record and submit this Day now.";
+  $("practiceDayHelp").textContent=relation+" You may learn, practice, record, and submit this Day now.";
 }
 async function loadParticipants(){
   try{
@@ -290,6 +396,8 @@ async function initialize(){
     selectedDay=savedDay>=1&&savedDay<=OSOTUA_CONFIG.totalDays?savedDay:currentDay;
     $("practiceDaySelect").value=String(selectedDay);
     await Promise.all([loadContent(),loadSelectedContent(),loadParticipants()]);
+    const savedMode=localStorage.getItem("osotua_memory_mode")||"study";
+    setMode(savedMode,{save:false});
     const saved=localStorage.getItem("osotua_participant");
     if(saved&&participantMap.has(saved)){
       $("participantSelect").value=saved;
@@ -345,6 +453,10 @@ async function loadMyProgress(){
 
 async function startRecording(){
   try{
+    setMode("recite");
+    $("reciteAnswer").textContent="";
+    $("reciteAnswer").classList.add("hidden");
+    $("revealAfterRecording").disabled=true;
     stream=await navigator.mediaDevices.getUserMedia({audio:true});
     chunks=[];seconds=0;audioBlob=null;$("timer").textContent="00:00";
     mediaRecorder=new MediaRecorder(stream);
@@ -355,7 +467,8 @@ async function startRecording(){
       $("audioPreview").hidden=false;
       $("playRecording").disabled=false;
       $("submitRecording").disabled=false;
-      $("submitStatus").textContent="Recording ready.";
+      $("revealAfterRecording").disabled=false;
+      $("submitStatus").textContent="Recording ready. Listen first, then check the Maa verse if needed.";
     };
     mediaRecorder.start();
     timerId=setInterval(()=>{
@@ -788,13 +901,43 @@ window.toggleParticipant=async(id,active)=>{
 document.querySelectorAll(".lang").forEach(btn=>{
   btn.onclick=()=>{
     currentLanguage=btn.dataset.lang;
+    practiceOverrides.clear();
     document.querySelectorAll(".lang").forEach(x=>{
-      x.classList.remove("active");x.classList.add("secondary");
+      const active=x.dataset.lang===currentLanguage;
+      x.classList.toggle("active",active);
+      x.classList.toggle("secondary",!active);
     });
-    btn.classList.remove("secondary");btn.classList.add("active");
     renderContent();
   };
 });
+
+document.querySelectorAll(".mode-tab").forEach(button=>{
+  button.onclick=()=>setMode(button.dataset.mode);
+});
+document.querySelectorAll("[data-go-mode]").forEach(button=>{
+  button.onclick=()=>{
+    setMode(button.dataset.goMode);
+    window.scrollTo({top:document.querySelector(`#${button.dataset.goMode}View`).offsetTop-90,behavior:"smooth"});
+  };
+});
+document.querySelectorAll(".mask-button").forEach(button=>{
+  button.onclick=()=>setPracticeMask(button.dataset.mask);
+});
+$("practiceVerse").onclick=event=>{
+  const button=event.target.closest("[data-practice-index]");
+  if(!button)return;
+  const index=Number(button.dataset.practiceIndex);
+  const currentlyMasked=button.dataset.masked==="true";
+  practiceOverrides.set(index,!currentlyMasked);
+  renderPracticeText();
+};
+$("practiceHint").onclick=revealFirstWordHints;
+$("practiceReset").onclick=resetPracticeWords;
+$("revealAfterRecording").onclick=()=>{
+  if(mediaRecorder?.state==="recording")return;
+  $("reciteAnswer").textContent=selectedContent?.maa_text||"Maa content not added yet.";
+  $("reciteAnswer").classList.remove("hidden");
+};
 
 $("participantSelect").onchange=async()=>{
   localStorage.setItem("osotua_participant",$("participantSelect").value);

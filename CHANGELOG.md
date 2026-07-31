@@ -1,14 +1,9 @@
 # Changelog
 
-## V5.2
-- Any-Day verse selection and future practice submissions
-- Clickable 50-Day grid
-- Selected-Day recording and offline queue
-- Participant-only progress views on the normal screen
-- Administrator-only all-participant progress views
-
-## V5.1
-- Reference Maa audio upload and comparison
-
-## V5.0
-- Korean Learner Memory Coach
+## V5.3
+- Added separate Learn, Practice, and Recite & Submit views.
+- Added gradual word-masking practice with individual word toggles.
+- Added first-word hints and a recommended memorization progression.
+- Removed visible verse text from the recording/submission view.
+- Added post-recording Maa answer check.
+- Retained Day selection, private participant progress, admin overview, PWA, and offline uploads.

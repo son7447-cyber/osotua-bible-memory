@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSOTUA V5.2</title>
+<title>OSOTUA V5.3</title>
 <meta name="theme-color" content="#5e4930">
 <meta name="description" content="Maasai Bible Memory Platform — Romans 8, 50 Day Challenge">
 <link rel="manifest" href="manifest.webmanifest">
@@ -15,7 +15,7 @@
 <header class="topbar">
   <div>
     <div class="brand">OSOTUA Bible Memory</div>
-    <div class="subtitle">Romans 8 · 50 Day Challenge · V5.2</div>
+    <div class="subtitle">Romans 8 · 50 Day Challenge · V5.3</div>
   </div>
   <div class="header-actions">
     <span id="networkBadge" class="badge">Checking…</span>
@@ -49,37 +49,99 @@
   </div>
 </section>
 
-<section class="card">
+<section class="card day-selector-card">
   <div class="today-heading">
     <div>
-      <p class="eyebrow">PRACTICE DAY</p>
+      <p class="eyebrow">SELECTED DAY</p>
       <h2 id="dayTitle">Loading…</h2>
     </div>
     <span id="dayModeBadge" class="mode-badge">Official Day</span>
   </div>
 
-  <label for="practiceDaySelect">Choose a Day to practice or submit</label>
+  <label for="practiceDaySelect">Choose a Day to learn, practice, or submit</label>
   <select id="practiceDaySelect"></select>
   <p id="practiceDayHelp" class="help"></p>
+</section>
 
+<section class="card memory-flow-card">
+  <p class="eyebrow">MEMORY FLOW</p>
+  <div class="mode-tabs" role="tablist" aria-label="Memory modes">
+    <button type="button" class="mode-tab active" data-mode="study">📖 Learn<br><small>말씀보기</small></button>
+    <button type="button" class="mode-tab secondary" data-mode="practice">🧩 Practice<br><small>가리기 연습</small></button>
+    <button type="button" class="mode-tab secondary" data-mode="recite">🎙 Recite & Submit<br><small>암송·제출</small></button>
+  </div>
+</section>
+
+<section id="studyView" class="card mode-view">
+  <p class="eyebrow">STEP 1 · LEARN</p>
+  <h2>Read and understand the verse</h2>
+  <p class="help">Read the full verse first. Change the language when meaning support is needed.</p>
   <div class="language-tabs">
     <button class="lang active" data-lang="maa">Maa</button>
     <button class="lang secondary" data-lang="en">English</button>
     <button class="lang secondary" data-lang="ko">한국어</button>
   </div>
   <p id="verseText" class="verse"></p>
+  <button type="button" class="next-mode" data-go-mode="practice">Continue to Practice →</button>
+</section>
+
+<section id="practiceView" class="card mode-view hidden">
+  <p class="eyebrow">STEP 2 · PRACTICE</p>
+  <h2>Hide words little by little</h2>
+  <p class="help">Choose how much to hide. Tap any word to hide or reveal only that word.</p>
+
+  <div class="language-tabs">
+    <button class="lang active" data-lang="maa">Maa</button>
+    <button class="lang secondary" data-lang="en">English</button>
+    <button class="lang secondary" data-lang="ko">한국어</button>
+  </div>
+
+  <div class="mask-controls" aria-label="Word hiding level">
+    <button type="button" class="mask-button active" data-mask="full">Full</button>
+    <button type="button" class="mask-button secondary" data-mask="light">Hide a little</button>
+    <button type="button" class="mask-button secondary" data-mask="half">Hide half</button>
+    <button type="button" class="mask-button secondary" data-mask="heavy">Hide most</button>
+    <button type="button" class="mask-button secondary" data-mask="initials">First letters</button>
+  </div>
+
+  <div id="practiceVerse" class="practice-verse" aria-live="polite"></div>
+  <p id="practiceMaskStatus" class="help"></p>
+
+  <div class="practice-tools">
+    <button type="button" id="practiceHint" class="secondary">💡 First-word hints</button>
+    <button type="button" id="practiceReset" class="secondary">↻ Reset words</button>
+  </div>
+
+  <div class="practice-method">
+    <strong>Recommended order</strong>
+    <span>Full → Hide a little → Hide half → Hide most → First letters → Recite & Submit</span>
+  </div>
+  <button type="button" class="next-mode" data-go-mode="recite">Ready to Recite →</button>
+</section>
+
+<section id="reciteView" class="card mode-view hidden">
+  <p class="eyebrow">STEP 3 · RECITE & SUBMIT</p>
+  <h2 id="reciteReference">Romans 8</h2>
+  <div class="recite-only-reference">
+    <span>본문은 보이지 않습니다.</span>
+    <strong>장절만 보고 마사이어로 암송하세요.</strong>
+  </div>
 
   <div class="timer" id="timer">00:00</div>
   <div class="actions">
-    <button id="startRecording">🎙 Start Recording</button>
+    <button id="startRecording">🎙 Start Reciting</button>
     <button id="stopRecording" class="secondary" disabled>⏹ Stop</button>
     <button id="playRecording" class="secondary" disabled>▶ Play</button>
     <button id="submitRecording" disabled>✓ Submit</button>
   </div>
   <audio id="audioPreview" controls hidden></audio>
   <p id="submitStatus" class="muted">No recording yet.</p>
-</section>
 
+  <div class="after-recording-check">
+    <button type="button" id="revealAfterRecording" class="secondary" disabled>Check Maa verse after recording</button>
+    <p id="reciteAnswer" class="verse hidden"></p>
+  </div>
+</section>
 
 <section id="coachCard" class="card hidden">
   <div class="section-heading">

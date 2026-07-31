@@ -45,3 +45,30 @@ label{display:block;font-weight:800;margin:10px 0 5px}.check-row{display:flex;al
 @media(max-width:650px){.compare-grid{grid-template-columns:1fr}}
 
 #practiceDaySelect{margin-bottom:6px}.privacy-note{padding:10px 12px;border-radius:10px;background:var(--soft);color:var(--muted);font-size:.9rem}.private-overall{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}.private-overall>div{padding:12px;background:var(--soft);border-radius:10px;text-align:center}.private-overall span{display:block;color:var(--muted);font-size:.78rem}.private-overall strong{display:block;margin-top:4px}@media(max-width:650px){.private-overall{grid-template-columns:1fr}}
+
+
+/* V5.3 staged learning, masking practice, and reference-only recitation */
+.mode-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.mode-tab{min-height:66px;line-height:1.15}
+.mode-tab small{font-weight:700;opacity:.8}
+.mode-view{scroll-margin-top:92px}
+.next-mode{margin-top:14px;width:100%}
+.mask-controls{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0}
+.mask-button{padding:10px 8px;font-size:.88rem}
+.practice-verse{display:flex;flex-wrap:wrap;gap:7px 5px;align-items:center;min-height:145px;padding:18px;background:var(--soft);border-radius:14px;font-size:1.12rem;line-height:1.8}
+.practice-word{display:inline-flex;width:auto;min-width:0;padding:4px 5px;border:0;border-radius:6px;background:transparent;color:var(--ink);font-weight:650;letter-spacing:.01em}
+.practice-word:hover{background:#eee8dc}
+.practice-word.masked{background:#e5dfd3;color:var(--accent);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.07em}
+.practice-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.practice-method{display:flex;flex-direction:column;gap:5px;padding:12px 14px;border-radius:12px;background:#fff3cd;color:#664d03;margin:12px 0}
+.recite-only-reference{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:170px;margin:14px 0;padding:24px;border:2px dashed var(--accent);border-radius:16px;background:var(--soft);text-align:center}
+.recite-only-reference span{color:var(--muted)}
+.recite-only-reference strong{font-size:1.15rem}
+.after-recording-check{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.after-recording-check>button{width:100%}
+#reciteAnswer{margin-top:12px}
+@media(max-width:700px){
+  .mode-tabs{grid-template-columns:1fr}
+  .mask-controls{grid-template-columns:repeat(2,1fr)}
+  .practice-tools{grid-template-columns:1fr}
+}
