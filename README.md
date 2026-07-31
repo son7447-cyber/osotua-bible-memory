@@ -1,4 +1,4 @@
-# OSOTUA Bible Memory V5.4
+# OSOTUA Bible Memory V5.4.2
 
 Romans 8 — 55 Day Cumulative Challenge
 
@@ -19,7 +19,13 @@ See `SCHEDULE.md` for the complete date-by-date plan.
 - All participant-facing Korean interface labels and instructions are now in English.
 - The Korean Bible text option remains available under the English label `Korean`.
 - The recitation screen now gives English-only instructions.
-- Cache versions and asset URLs were updated to `5.4` so browsers receive the new schedule files.
+- Cache versions and asset URLs were updated to `5.4.2` so browsers receive the recording fix.
+- Submission records always receive a valid cumulative verse number.
+- Pending V5.4 recordings with a missing verse number are repaired automatically during Sync.
+- The progress grid now consistently uses all 55 days.
+- Online visits load app files from the network first and use the cache only when offline.
+- The service worker checks for an update on every page load and refreshes once when a new version takes control.
+- `legacy-redirect` contains a tiny redirect site for each old Netlify address.
 
 ## Deploy
 
