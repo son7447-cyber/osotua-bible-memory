@@ -2,7 +2,7 @@ const sb=window.supabase.createClient(OSOTUA_CONFIG.supabaseUrl,OSOTUA_CONFIG.su
 const $=id=>document.getElementById(id);
 
 let participants=[],participantMap=new Map();
-let settings=null,currentDay=1,adminDay=1,currentContent=null,selectedDay=1,selectedContent=null,currentLanguage="maa";
+let settings=null,currentDay=1,currentVerseEnd=1,adminDay=1,currentContent=null,selectedDay=1,selectedVerseEnd=1,selectedContent=null,currentLanguage="maa";
 let currentMode="study",practiceMaskLevel="full",practiceOverrides=new Map();
 let currentCoach=null,coachVerse=null,coachDay=1,coachTimerId=null,coachSeconds=30;
 let practiceRecorder=null,practiceStream=null,practiceChunks=[],practiceBlob=null;
@@ -27,11 +27,30 @@ function localDateString(date=new Date()){
   const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,"0"),d=String(date.getDate()).padStart(2,"0");
   return `${y}-${m}-${d}`;
 }
-function calculatedDay(startDate){
-  if(!startDate)return 1;
-  const start=new Date(`${startDate}T00:00:00`);
-  const today=new Date(`${localDateString()}T00:00:00`);
-  return Math.min(50,Math.max(1,Math.floor((today-start)/86400000)+1));
+function parseLocalDate(value){
+  const [y,m,d]=String(value).split("-").map(Number);
+  return new Date(y,m-1,d,12,0,0,0);
+}
+function scheduleForDate(dateValue=localDateString()){
+  const start=parseLocalDate(OSOTUA_CONFIG.projectStartDate);
+  const target=parseLocalDate(dateValue);
+  const rawDay=Math.floor((target-start)/86400000)+1;
+  const programDay=Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,rawDay));
+  let verseEnd=0;
+  for(let i=0;i<programDay;i++){
+    const day=new Date(start);
+    day.setDate(start.getDate()+i);
+    if(day.getDay()!==0&&day.getDay()!==6)verseEnd++;
+  }
+  verseEnd=Math.min(OSOTUA_CONFIG.totalVerses,Math.max(1,verseEnd));
+  const scheduleDate=new Date(start);
+  scheduleDate.setDate(start.getDate()+programDay-1);
+  return {programDay,verseEnd,isReview:scheduleDate.getDay()===0||scheduleDate.getDay()===6,date:localDateString(scheduleDate)};
+}
+function scheduleForDay(day){
+  const start=parseLocalDate(OSOTUA_CONFIG.projectStartDate);
+  start.setDate(start.getDate()+Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,Number(day)||1))-1);
+  return scheduleForDate(localDateString(start));
 }
 function newId(){
   return crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -142,12 +161,16 @@ function parseWordLine(line){
   return {word:(parts.shift()||"").trim(),meaning:parts.join(" = ").trim()};
 }
 function populateCoachDays(){
-  $("coachDaySelect").innerHTML=Array.from({length:OSOTUA_CONFIG.totalDays},(_,i)=>i+1)
+  $("coachDaySelect").innerHTML=Array.from({length:OSOTUA_CONFIG.totalVerses},(_,i)=>i+1)
     .map(day=>`<option value="${day}">Day ${day}</option>`).join("");
 }
 function populatePracticeDays(){
   $("practiceDaySelect").innerHTML=Array.from({length:OSOTUA_CONFIG.totalDays},(_,i)=>i+1)
-    .map(day=>`<option value="${day}">Day ${day}</option>`).join("");
+    .map(day=>{
+      const x=scheduleForDay(day);
+      const label=x.isReview?`Review Romans 8:1–${x.verseEnd}`:`Romans 8:1–${x.verseEnd}`;
+      return `<option value="${day}">Day ${day} · ${x.date} · ${label}</option>`;
+    }).join("");
 }
 function resetMainRecording(){
   if(mediaRecorder&&mediaRecorder.state!=="inactive")mediaRecorder.stop();
@@ -169,6 +192,7 @@ function resetMainRecording(){
 }
 async function selectPracticeDay(day){
   selectedDay=Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,Number(day)||currentDay));
+  selectedVerseEnd=scheduleForDay(selectedDay).verseEnd;
   localStorage.setItem("osotua_selected_day",String(selectedDay));
   $("practiceDaySelect").value=String(selectedDay);
   practiceOverrides.clear();
@@ -182,7 +206,7 @@ function updateCoachVisibility(){
   const visible=name==="SON";
   $("coachCard").classList.toggle("hidden",!visible);
   if(visible && !$("coachDaySelect").value){
-    coachDay=Math.min(currentDay,OSOTUA_CONFIG.totalDays);
+    coachDay=Math.min(currentVerseEnd,OSOTUA_CONFIG.totalVerses);
     $("coachDaySelect").value=String(coachDay);
     loadCoachDay(coachDay);
   }
@@ -328,7 +352,9 @@ async function loadSettings(){
     settings=cacheGet("settings");
     if(!settings)throw error;
   }
-  currentDay=settings.auto_advance?calculatedDay(settings.start_date):settings.current_day;
+  const todaySchedule=scheduleForDate();
+  currentDay=todaySchedule.programDay;
+  currentVerseEnd=todaySchedule.verseEnd;
 }
 async function loadContent(){
   try{
@@ -343,19 +369,35 @@ async function loadContent(){
 }
 async function loadSelectedContent(){
   try{
-    const{data,error}=await sb.from("memory_content").select("*").eq("day",selectedDay).single();
+    selectedVerseEnd=scheduleForDay(selectedDay).verseEnd;
+    const{data,error}=await sb.from("memory_content").select("*").gte("day",1).lte("day",selectedVerseEnd).order("day");
     if(error)throw error;
-    selectedContent=data;
+    if(!data?.length)throw new Error("No verse content is available for this date.");
+    selectedContent={
+      day:selectedDay,
+      reference:selectedVerseEnd===1?"Romans 8:1":`Romans 8:1–${selectedVerseEnd}`,
+      maa_text:data.map(x=>x.maa_text||"").filter(Boolean).join(" "),
+      english_text:data.map(x=>x.english_text||"").filter(Boolean).join(" "),
+      korean_text:data.map(x=>x.korean_text||"").filter(Boolean).join(" ")
+    };
     cacheSet(`content_${selectedDay}`,data);
   }catch(error){
-    selectedContent=cacheGet(`content_${selectedDay}`);
-    if(!selectedContent)throw error;
+    const cached=cacheGet(`content_${selectedDay}`);
+    if(!cached?.length)throw error;
+    selectedContent={
+      day:selectedDay,
+      reference:selectedVerseEnd===1?"Romans 8:1":`Romans 8:1–${selectedVerseEnd}`,
+      maa_text:cached.map(x=>x.maa_text||"").filter(Boolean).join(" "),
+      english_text:cached.map(x=>x.english_text||"").filter(Boolean).join(" "),
+      korean_text:cached.map(x=>x.korean_text||"").filter(Boolean).join(" ")
+    };
   }
   renderContent();
 }
 function renderContent(){
   if(!selectedContent)return;
-  $("dayTitle").textContent=`Day ${selectedDay} · ${selectedContent.reference}`;
+  const selectedSchedule=scheduleForDay(selectedDay);
+  $("dayTitle").textContent=`Day ${selectedDay} · ${selectedSchedule.date} · ${selectedContent.reference}`;
   $("verseText").textContent=selectedVerseText();
   $("reciteReference").textContent=selectedContent.reference||`Romans 8:${selectedDay}`;
   $("reciteAnswer").textContent="";
@@ -363,14 +405,16 @@ function renderContent(){
   $("revealAfterRecording").disabled=true;
   practiceOverrides.clear();
   renderPracticeText();
-  $("dayModeBadge").textContent=`Official Day ${currentDay}`;
-  $("dayModeBadge").className=`mode-badge ${settings?.auto_advance?"auto":""}`;
+  $("dayModeBadge").textContent=selectedSchedule.isReview?"Weekend Review":`Verse ${selectedVerseEnd}`;
+  $("dayModeBadge").className="mode-badge auto";
   const relation=selectedDay===currentDay
-    ?"This is today’s official challenge Day."
+    ?selectedSchedule.isReview
+      ?`Weekend review: recite all accumulated verses, Romans 8:1–${selectedVerseEnd}. No new verse is added today.`
+      :`Today’s cumulative passage is Romans 8:1–${selectedVerseEnd}.`
     :selectedDay>currentDay
-      ?`Early practice: this is ${selectedDay-currentDay} Day(s) ahead of the official schedule.`
-      :`Review: this is ${currentDay-selectedDay} Day(s) before the official schedule.`;
-  $("practiceDayHelp").textContent=relation+" You may learn, practice, record, and submit this Day now.";
+      ?`Early practice for ${selectedSchedule.date}: Romans 8:1–${selectedVerseEnd}.`
+      :`Review for ${selectedSchedule.date}: Romans 8:1–${selectedVerseEnd}.`;
+  $("practiceDayHelp").textContent=relation+" The date follows this device’s local time zone.";
 }
 async function loadParticipants(){
   try{
@@ -391,9 +435,10 @@ async function initialize(){
   populatePracticeDays();
   try{
     await loadSettings();
-    adminDay=currentDay;
-    const savedDay=Number(localStorage.getItem("osotua_selected_day"));
-    selectedDay=savedDay>=1&&savedDay<=OSOTUA_CONFIG.totalDays?savedDay:currentDay;
+    adminDay=currentVerseEnd;
+    selectedDay=currentDay;
+    localStorage.setItem("osotua_selected_day",String(selectedDay));
+    selectedVerseEnd=scheduleForDay(selectedDay).verseEnd;
     $("practiceDaySelect").value=String(selectedDay);
     await Promise.all([loadContent(),loadSelectedContent(),loadParticipants()]);
     const savedMode=localStorage.getItem("osotua_memory_mode")||"study";
@@ -745,7 +790,7 @@ async function uploadReferenceAudio(){
   $("referenceAudioFile").value="";
   $("referenceAudioAdminStatus").textContent="Reference audio uploaded.";
   await loadContent();
-  if(selectedDay===adminDay)await loadSelectedContent();
+  if(selectedVerseEnd===adminDay)await loadSelectedContent();
   await loadAdminReferencePreview();
   if(coachDay===adminDay)await loadCoachDay(coachDay);
 }
@@ -761,13 +806,13 @@ async function removeReferenceAudio(){
   await sb.storage.from(OSOTUA_CONFIG.referenceBucket).remove([path]);
   $("referenceAudioAdminStatus").textContent="Reference audio removed.";
   await loadContent();
-  if(selectedDay===adminDay)await loadSelectedContent();
+  if(selectedVerseEnd===adminDay)await loadSelectedContent();
   await loadAdminReferencePreview();
   if(coachDay===adminDay)await loadCoachDay(coachDay);
 }
 
 async function changeAdminDay(day){
-  adminDay=Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,Number(day)||adminDay));
+  adminDay=Math.min(OSOTUA_CONFIG.totalVerses,Math.max(1,Number(day)||adminDay));
   await loadContent();
   await renderAdmin();
 }
@@ -860,7 +905,7 @@ async function saveSchedule(){
   $("scheduleSaveStatus").textContent=error?error.message:"Schedule saved.";
   if(!error){
     await loadSettings();
-    adminDay=currentDay;
+    adminDay=currentVerseEnd;
     await Promise.all([loadContent(),loadSelectedContent()]);
     await Promise.all([loadCommunity(),loadMyProgress(),loadLeaderboard()]);
     renderAdmin();
