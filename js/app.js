@@ -220,22 +220,48 @@ function resetMainRecording(){
   $("revealAfterRecording").disabled=true;
 }
 async function selectPracticeDay(day){
-  selectedDay=Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,Number(day)||currentDay));
+  selectedDay=Math.min(
+    OSOTUA_CONFIG.totalDays,
+    Math.max(1,Number(day)||currentDay)
+  );
+
   selectedVerseEnd=scheduleForDay(selectedDay).verseEnd;
   localStorage.setItem("osotua_selected_day",String(selectedDay));
   $("practiceDaySelect").value=String(selectedDay);
+
   practiceOverrides.clear();
   resetMainRecording();
+
   await loadSelectedContent();
-  await Promise.all([loadMyProgress(),loadCommunity()]);
+
+  if(!$("coachCard").classList.contains("hidden")){
+    coachDay=Math.min(
+      selectedVerseEnd,
+      OSOTUA_CONFIG.totalVerses
+    );
+
+    $("coachDaySelect").value=String(coachDay);
+    await loadCoachDay(coachDay);
+  }
+
+  await Promise.all([
+    loadMyProgress(),
+    loadCommunity()
+  ]);
 }
 function updateCoachVisibility(){
   const pid=$("participantSelect").value;
   const name=participantMap.get(pid);
   const visible=name==="SON";
+
   $("coachCard").classList.toggle("hidden",!visible);
-  if(visible && !$("coachDaySelect").value){
-    coachDay=Math.min(currentVerseEnd,OSOTUA_CONFIG.totalVerses);
+
+  if(visible){
+    coachDay=Math.min(
+      selectedVerseEnd,
+      OSOTUA_CONFIG.totalVerses
+    );
+
     $("coachDaySelect").value=String(coachDay);
     loadCoachDay(coachDay);
   }
