@@ -1,11 +1,11 @@
-const CACHE_NAME="osotua-v5-4-2";
+const CACHE_NAME="osotua-v5-5-0";
 const APP_SHELL=[
   "./",
   "./index.html",
-  "./css/style.css?v=5.4.2",
-  "./js/config.js?v=5.4.2",
-  "./js/offline.js?v=5.4.2",
-  "./js/app.js?v=5.4.2",
+  "./css/style.css?v=5.5.0",
+  "./js/config.js?v=5.5.0",
+  "./js/offline.js?v=5.5.0",
+  "./js/app.js?v=5.5.0",
   "./version.json",
   "./manifest.webmanifest",
   "./offline.html",
