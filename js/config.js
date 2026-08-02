@@ -7,5 +7,5 @@ const OSOTUA_CONFIG={
   totalVerses:50,
   projectStartDate:"2026-07-30",
   adminPin:"0808",
-  cacheVersion:"5.5.0"
+  cacheVersion:"5.5.2"
 };
