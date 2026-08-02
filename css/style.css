@@ -72,3 +72,7 @@ label{display:block;font-weight:800;margin:10px 0 5px}.check-row{display:flex;al
   .mask-controls{grid-template-columns:repeat(2,1fr)}
   .practice-tools{grid-template-columns:1fr}
 }
+
+/* V5.5.2: subtle verse numbers for cumulative passages */
+.verse-number{font-size:.52em;line-height:1;color:#9b8c78;font-weight:700;vertical-align:super;margin-right:.28em;user-select:none}
+.practice-verse-number{align-self:flex-start;font-size:.56em;line-height:1;color:#9b8c78;font-weight:700;margin:.38em .08em 0 .35em;user-select:none}
