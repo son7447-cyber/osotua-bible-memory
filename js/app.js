@@ -2,7 +2,7 @@ const sb=window.supabase.createClient(OSOTUA_CONFIG.supabaseUrl,OSOTUA_CONFIG.su
 const $=id=>document.getElementById(id);
 
 let participants=[],participantMap=new Map();
-let settings=null,currentDay=1,currentVerseEnd=1,adminDay=1,currentContent=null,selectedDay=1,selectedVerseEnd=1,selectedContent=null,currentLanguage="maa";
+let settings=null,currentDay=1,currentVerseEnd=1,adminDay=1,currentContent=null,selectedDay=1,selectedVerseEnd=1,selectedContent=null,selectedVerseRows=[],currentLanguage="maa";
 let currentMode="study",practiceMaskLevel="full",practiceOverrides=new Map();
 let currentCoach=null,coachVerse=null,coachDay=1,coachTimerId=null,coachSeconds=30;
 let practiceRecorder=null,practiceStream=null,practiceChunks=[],practiceBlob=null;
@@ -62,6 +62,26 @@ function selectedVerseText(language=currentLanguage){
   const key={maa:"maa_text",en:"english_text",ko:"korean_text"}[language]||"maa_text";
   return selectedContent[key]||"Content not added yet.";
 }
+function selectedVerseRowsForLanguage(language=currentLanguage){
+  const key={maa:"maa_text",en:"english_text",ko:"korean_text"}[language]||"maa_text";
+  return selectedVerseRows
+    .map(row=>({day:row.day,text:(row[key]||"").trim()}))
+    .filter(row=>row.text);
+}
+function renderNumberedVerses(elementId,language=currentLanguage){
+  const box=$(elementId);
+  if(!box)return;
+  box.innerHTML="";
+  selectedVerseRowsForLanguage(language).forEach((row,index)=>{
+    if(index>0)box.appendChild(document.createTextNode(" "));
+    const number=document.createElement("sup");
+    number.className="verse-number";
+    number.textContent=String(row.day);
+    number.setAttribute("aria-label","Verse "+row.day);
+    box.appendChild(number);
+    box.appendChild(document.createTextNode(row.text));
+  });
+}
 function setMode(mode,{save=true}={}){
   if(!["study","practice","recite"].includes(mode))mode="study";
   if(currentMode==="recite" && mode!=="recite" && mediaRecorder?.state==="recording")stopRecording();
@@ -106,20 +126,29 @@ function wordIsMasked(index){
 function renderPracticeText(){
   const box=$("practiceVerse");
   if(!box)return;
-  const words=selectedVerseText().trim().split(/\s+/).filter(Boolean);
+  const rows=selectedVerseRowsForLanguage();
   box.innerHTML="";
   let maskedCount=0;
-  words.forEach((word,index)=>{
-    const masked=wordIsMasked(index);
-    if(masked)maskedCount++;
-    const button=document.createElement("button");
-    button.type="button";
-    button.className=`practice-word ${masked?"masked":""}`;
-    button.dataset.practiceIndex=String(index);
-    button.dataset.masked=String(masked);
-    button.textContent=masked?maskWord(word,practiceMaskLevel==="initials"):word;
-    button.title=masked?"Tap to reveal":"Tap to hide";
-    box.appendChild(button);
+  let wordCount=0;
+  rows.forEach(row=>{
+    const number=document.createElement("span");
+    number.className="practice-verse-number";
+    number.textContent=String(row.day);
+    number.setAttribute("aria-label",`Verse ${row.day}`);
+    box.appendChild(number);
+    row.text.split(/\s+/).filter(Boolean).forEach(word=>{
+      const index=wordCount++;
+      const masked=wordIsMasked(index);
+      if(masked)maskedCount++;
+      const button=document.createElement("button");
+      button.type="button";
+      button.className=`practice-word ${masked?"masked":""}`;
+      button.dataset.practiceIndex=String(index);
+      button.dataset.masked=String(masked);
+      button.textContent=masked?maskWord(word,practiceMaskLevel==="initials"):word;
+      button.title=masked?"Tap to reveal":"Tap to hide";
+      box.appendChild(button);
+    });
   });
   const labels={
     full:"Full verse",
@@ -128,7 +157,7 @@ function renderPracticeText(){
     heavy:"Most words hidden",
     initials:"First letters only"
   };
-  $("practiceMaskStatus").textContent=`${labels[practiceMaskLevel]} · ${maskedCount} of ${words.length} words hidden`;
+  $("practiceMaskStatus").textContent=`${labels[practiceMaskLevel]} · ${maskedCount} of ${wordCount} words hidden`;
 }
 function setPracticeMask(level){
   if(!["full","light","half","heavy","initials"].includes(level))level="full";
@@ -373,6 +402,7 @@ async function loadSelectedContent(){
     const{data,error}=await sb.from("memory_content").select("*").gte("day",1).lte("day",selectedVerseEnd).order("day");
     if(error)throw error;
     if(!data?.length)throw new Error("No verse content is available for this date.");
+    selectedVerseRows=data;
     selectedContent={
       day:selectedDay,
       verse_number:selectedVerseEnd,
@@ -385,6 +415,7 @@ async function loadSelectedContent(){
   }catch(error){
     const cached=cacheGet(`content_${selectedDay}`);
     if(!cached?.length)throw error;
+    selectedVerseRows=cached;
     selectedContent={
       day:selectedDay,
       verse_number:selectedVerseEnd,
@@ -400,7 +431,7 @@ function renderContent(){
   if(!selectedContent)return;
   const selectedSchedule=scheduleForDay(selectedDay);
   $("dayTitle").textContent=`Day ${selectedDay} · ${selectedSchedule.date} · ${selectedContent.reference}`;
-  $("verseText").textContent=selectedVerseText();
+  renderNumberedVerses("verseText");
   $("reciteReference").textContent=selectedContent.reference||`Romans 8:${selectedDay}`;
   $("reciteAnswer").textContent="";
   $("reciteAnswer").classList.add("hidden");
@@ -985,7 +1016,7 @@ $("practiceHint").onclick=revealFirstWordHints;
 $("practiceReset").onclick=resetPracticeWords;
 $("revealAfterRecording").onclick=()=>{
   if(mediaRecorder?.state==="recording")return;
-  $("reciteAnswer").textContent=selectedContent?.maa_text||"Maa content not added yet.";
+  renderNumberedVerses("reciteAnswer","maa");
   $("reciteAnswer").classList.remove("hidden");
 };
 
