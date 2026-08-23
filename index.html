@@ -3,19 +3,31 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OSOTUA V5.4</title>
+<title>OSOTUA V5.5.3</title>
 <meta name="theme-color" content="#5e4930">
-<meta name="description" content="Maasai Bible Memory Platform — Romans 8, 50 Day Challenge">
+<meta name="description" content="Maasai Bible Memory Platform — Romans 8, 50 Day Cumulative Challenge">
+<link rel="canonical" href="https://osotua-bible-memory.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://osotua-bible-memory.vercel.app/">
+<meta property="og:title" content="OSOTUA Bible Memory V5.5.3">
+<meta property="og:description" content="Romans 8 · 50 Day Cumulative Maasai Bible Memory Challenge">
+<meta property="og:image" content="https://osotua-bible-memory.vercel.app/assets/icon-512.png">
+<meta property="og:image:width" content="512">
+<meta property="og:image:height" content="512">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="OSOTUA Bible Memory V5.5.3">
+<meta name="twitter:description" content="Romans 8 · 50 Day Cumulative Maasai Bible Memory Challenge">
+<meta name="twitter:image" content="https://osotua-bible-memory.vercel.app/assets/icon-512.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icon-192.png">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=5.5.3">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header class="topbar">
   <div>
     <div class="brand">OSOTUA Bible Memory</div>
-    <div class="subtitle">Romans 8 · 50 Day Challenge · V5.4</div>
+    <div class="subtitle">Romans 8 · 50 Day Cumulative Challenge · V5.5.3</div>
   </div>
   <div class="header-actions">
     <span id="networkBadge" class="badge">Checking…</span>
@@ -66,9 +78,9 @@
 <section class="card memory-flow-card">
   <p class="eyebrow">MEMORY FLOW</p>
   <div class="mode-tabs" role="tablist" aria-label="Memory modes">
-    <button type="button" class="mode-tab active" data-mode="study">📖 Learn<br><small>말씀보기</small></button>
-    <button type="button" class="mode-tab secondary" data-mode="practice">🧩 Practice<br><small>가리기 연습</small></button>
-    <button type="button" class="mode-tab secondary" data-mode="recite">🎙 Recite & Submit<br><small>암송·제출</small></button>
+    <button type="button" class="mode-tab active" data-mode="study">📖 Learn<br><small>Read the Verse</small></button>
+    <button type="button" class="mode-tab secondary" data-mode="practice">🧩 Practice<br><small>Word-Hiding Practice</small></button>
+    <button type="button" class="mode-tab secondary" data-mode="recite">🎙 Recite & Submit<br><small>Record and Submit</small></button>
   </div>
 </section>
 
@@ -79,7 +91,7 @@
   <div class="language-tabs">
     <button class="lang active" data-lang="maa">Maa</button>
     <button class="lang secondary" data-lang="en">English</button>
-    <button class="lang secondary" data-lang="ko">한국어</button>
+    <button class="lang secondary" data-lang="ko">Korean</button>
   </div>
   <p id="verseText" class="verse"></p>
   <button type="button" class="next-mode" data-go-mode="practice">Continue to Practice →</button>
@@ -93,7 +105,7 @@
   <div class="language-tabs">
     <button class="lang active" data-lang="maa">Maa</button>
     <button class="lang secondary" data-lang="en">English</button>
-    <button class="lang secondary" data-lang="ko">한국어</button>
+    <button class="lang secondary" data-lang="ko">Korean</button>
   </div>
 
   <div class="mask-controls" aria-label="Word hiding level">
@@ -123,12 +135,11 @@
   <p class="eyebrow">STEP 3 · RECITE & SUBMIT</p>
   <h2 id="reciteReference">Romans 8</h2>
   <div class="recite-only-reference">
-    <span>본문은 보이지 않습니다.</span>
-    <strong>장절만 보고 마사이어로 암송하세요.</strong>
+    <span>The verse text is hidden.</span>
+    <strong>Look only at the reference and recite the verse in Maa.</strong>
   </div>
 
   <div class="timer" id="timer">00:00</div>
-    <p class="muted recording-note">Max 20 min · speech-optimized audio</p>
   <div class="actions">
     <button id="startRecording">🎙 Start Reciting</button>
     <button id="stopRecording" class="secondary" disabled>⏹ Stop</button>
@@ -253,11 +264,11 @@
         <h3>Day Schedule</h3>
         <label class="check-row">
           <input id="autoAdvance" type="checkbox">
-          <span>Advance the Day automatically</span>
+          <span>Use the automatic local-date schedule</span>
         </label>
         <label for="startDate">Project start date</label>
         <input id="startDate" type="date">
-        <p class="help">When automatic mode is on, the start date is Day 1. The project advances one Day every calendar day.</p>
+        <p class="help">The fixed schedule starts on July 30, 2026. New verses are added Monday through Friday; Saturdays and Sundays are cumulative review days. Each device follows its own local date.</p>
         <div class="day-control">
           <button id="previousDay" class="secondary">◀</button>
           <strong id="adminCurrentDay">Day 1</strong>
@@ -275,7 +286,7 @@
         <textarea id="editMaa"></textarea>
         <label>English</label>
         <textarea id="editEnglish"></textarea>
-        <label>한국어</label>
+        <label>Korean</label>
         <textarea id="editKorean"></textarea>
         <button id="saveContent">Save Content</button>
         <p id="contentSaveStatus" class="muted"></p>
@@ -326,8 +337,8 @@
   </div>
 </div>
 
-<script src="js/config.js"></script>
-<script src="js/offline.js"></script>
-<script src="js/app.js"></script>
+<script src="js/config.js?v=5.5.3"></script>
+<script src="js/offline.js?v=5.5.3"></script>
+<script src="js/app.js?v=5.5.3"></script>
 </body>
 </html>
