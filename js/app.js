@@ -2,11 +2,25 @@ const sb=window.supabase.createClient(OSOTUA_CONFIG.supabaseUrl,OSOTUA_CONFIG.su
 const $=id=>document.getElementById(id);
 
 let participants=[],participantMap=new Map();
-let settings=null,currentDay=1,currentVerseEnd=1,adminDay=1,currentContent=null,selectedDay=1,selectedVerseEnd=1,selectedContent=null,selectedVerseRows=[],currentLanguage="maa";
+let settings=null,currentDay=1,adminDay=1,currentContent=null,selectedDay=1,selectedContent=null,currentLanguage="maa";
 let currentMode="study",practiceMaskLevel="full",practiceOverrides=new Map();
 let currentCoach=null,coachVerse=null,coachDay=1,coachTimerId=null,coachSeconds=30;
 let practiceRecorder=null,practiceStream=null,practiceChunks=[],practiceBlob=null;
 let mediaRecorder=null,stream=null,chunks=[],audioBlob=null,timerId=null,seconds=0;
+
+const SPEECH_AUDIO_CONSTRAINTS={
+  channelCount:1,
+  echoCancellation:true,
+  noiseSuppression:true,
+  autoGainControl:true
+};
+function createSpeechRecorder(mediaStream){
+  const options={audioBitsPerSecond:OSOTUA_CONFIG.audioBitsPerSecond||32000};
+  if(window.MediaRecorder && MediaRecorder.isTypeSupported("audio/webm;codecs=opus")){
+    options.mimeType="audio/webm;codecs=opus";
+  }
+  return new MediaRecorder(mediaStream,options);
+}
 let deferredInstallPrompt=null;
 
 function cacheSet(key,value){
@@ -27,30 +41,11 @@ function localDateString(date=new Date()){
   const y=date.getFullYear(),m=String(date.getMonth()+1).padStart(2,"0"),d=String(date.getDate()).padStart(2,"0");
   return `${y}-${m}-${d}`;
 }
-function parseLocalDate(value){
-  const [y,m,d]=String(value).split("-").map(Number);
-  return new Date(y,m-1,d,12,0,0,0);
-}
-function scheduleForDate(dateValue=localDateString()){
-  const start=parseLocalDate(OSOTUA_CONFIG.projectStartDate);
-  const target=parseLocalDate(dateValue);
-  const rawDay=Math.floor((target-start)/86400000)+1;
-  const programDay=Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,rawDay));
-  let verseEnd=0;
-  for(let i=0;i<programDay;i++){
-    const day=new Date(start);
-    day.setDate(start.getDate()+i);
-    if(day.getDay()!==0&&day.getDay()!==6)verseEnd++;
-  }
-  verseEnd=Math.min(OSOTUA_CONFIG.totalVerses,Math.max(1,verseEnd));
-  const scheduleDate=new Date(start);
-  scheduleDate.setDate(start.getDate()+programDay-1);
-  return {programDay,verseEnd,isReview:scheduleDate.getDay()===0||scheduleDate.getDay()===6,date:localDateString(scheduleDate)};
-}
-function scheduleForDay(day){
-  const start=parseLocalDate(OSOTUA_CONFIG.projectStartDate);
-  start.setDate(start.getDate()+Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,Number(day)||1))-1);
-  return scheduleForDate(localDateString(start));
+function calculatedDay(startDate){
+  if(!startDate)return 1;
+  const start=new Date(`${startDate}T00:00:00`);
+  const today=new Date(`${localDateString()}T00:00:00`);
+  return Math.min(50,Math.max(1,Math.floor((today-start)/86400000)+1));
 }
 function newId(){
   return crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -61,26 +56,6 @@ function selectedVerseText(language=currentLanguage){
   if(!selectedContent)return "";
   const key={maa:"maa_text",en:"english_text",ko:"korean_text"}[language]||"maa_text";
   return selectedContent[key]||"Content not added yet.";
-}
-function selectedVerseRowsForLanguage(language=currentLanguage){
-  const key={maa:"maa_text",en:"english_text",ko:"korean_text"}[language]||"maa_text";
-  return selectedVerseRows
-    .map(row=>({day:row.day,text:(row[key]||"").trim()}))
-    .filter(row=>row.text);
-}
-function renderNumberedVerses(elementId,language=currentLanguage){
-  const box=$(elementId);
-  if(!box)return;
-  box.innerHTML="";
-  selectedVerseRowsForLanguage(language).forEach((row,index)=>{
-    if(index>0)box.appendChild(document.createTextNode(" "));
-    const number=document.createElement("sup");
-    number.className="verse-number";
-    number.textContent=String(row.day);
-    number.setAttribute("aria-label","Verse "+row.day);
-    box.appendChild(number);
-    box.appendChild(document.createTextNode(row.text));
-  });
 }
 function setMode(mode,{save=true}={}){
   if(!["study","practice","recite"].includes(mode))mode="study";
@@ -126,29 +101,20 @@ function wordIsMasked(index){
 function renderPracticeText(){
   const box=$("practiceVerse");
   if(!box)return;
-  const rows=selectedVerseRowsForLanguage();
+  const words=selectedVerseText().trim().split(/\s+/).filter(Boolean);
   box.innerHTML="";
   let maskedCount=0;
-  let wordCount=0;
-  rows.forEach(row=>{
-    const number=document.createElement("span");
-    number.className="practice-verse-number";
-    number.textContent=String(row.day);
-    number.setAttribute("aria-label",`Verse ${row.day}`);
-    box.appendChild(number);
-    row.text.split(/\s+/).filter(Boolean).forEach(word=>{
-      const index=wordCount++;
-      const masked=wordIsMasked(index);
-      if(masked)maskedCount++;
-      const button=document.createElement("button");
-      button.type="button";
-      button.className=`practice-word ${masked?"masked":""}`;
-      button.dataset.practiceIndex=String(index);
-      button.dataset.masked=String(masked);
-      button.textContent=masked?maskWord(word,practiceMaskLevel==="initials"):word;
-      button.title=masked?"Tap to reveal":"Tap to hide";
-      box.appendChild(button);
-    });
+  words.forEach((word,index)=>{
+    const masked=wordIsMasked(index);
+    if(masked)maskedCount++;
+    const button=document.createElement("button");
+    button.type="button";
+    button.className=`practice-word ${masked?"masked":""}`;
+    button.dataset.practiceIndex=String(index);
+    button.dataset.masked=String(masked);
+    button.textContent=masked?maskWord(word,practiceMaskLevel==="initials"):word;
+    button.title=masked?"Tap to reveal":"Tap to hide";
+    box.appendChild(button);
   });
   const labels={
     full:"Full verse",
@@ -157,7 +123,7 @@ function renderPracticeText(){
     heavy:"Most words hidden",
     initials:"First letters only"
   };
-  $("practiceMaskStatus").textContent=`${labels[practiceMaskLevel]} · ${maskedCount} of ${wordCount} words hidden`;
+  $("practiceMaskStatus").textContent=`${labels[practiceMaskLevel]} · ${maskedCount} of ${words.length} words hidden`;
 }
 function setPracticeMask(level){
   if(!["full","light","half","heavy","initials"].includes(level))level="full";
@@ -190,16 +156,12 @@ function parseWordLine(line){
   return {word:(parts.shift()||"").trim(),meaning:parts.join(" = ").trim()};
 }
 function populateCoachDays(){
-  $("coachDaySelect").innerHTML=Array.from({length:OSOTUA_CONFIG.totalVerses},(_,i)=>i+1)
+  $("coachDaySelect").innerHTML=Array.from({length:OSOTUA_CONFIG.totalDays},(_,i)=>i+1)
     .map(day=>`<option value="${day}">Day ${day}</option>`).join("");
 }
 function populatePracticeDays(){
   $("practiceDaySelect").innerHTML=Array.from({length:OSOTUA_CONFIG.totalDays},(_,i)=>i+1)
-    .map(day=>{
-      const x=scheduleForDay(day);
-      const label=x.isReview?`Review Romans 8:1–${x.verseEnd}`:`Romans 8:1–${x.verseEnd}`;
-      return `<option value="${day}">Day ${day} · ${x.date} · ${label}</option>`;
-    }).join("");
+    .map(day=>`<option value="${day}">Day ${day}</option>`).join("");
 }
 function resetMainRecording(){
   if(mediaRecorder&&mediaRecorder.state!=="inactive")mediaRecorder.stop();
@@ -220,48 +182,21 @@ function resetMainRecording(){
   $("revealAfterRecording").disabled=true;
 }
 async function selectPracticeDay(day){
-  selectedDay=Math.min(
-    OSOTUA_CONFIG.totalDays,
-    Math.max(1,Number(day)||currentDay)
-  );
-
-  selectedVerseEnd=scheduleForDay(selectedDay).verseEnd;
+  selectedDay=Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,Number(day)||currentDay));
   localStorage.setItem("osotua_selected_day",String(selectedDay));
   $("practiceDaySelect").value=String(selectedDay);
-
   practiceOverrides.clear();
   resetMainRecording();
-
   await loadSelectedContent();
-
-  if(!$("coachCard").classList.contains("hidden")){
-    coachDay=Math.min(
-      selectedVerseEnd,
-      OSOTUA_CONFIG.totalVerses
-    );
-
-    $("coachDaySelect").value=String(coachDay);
-    await loadCoachDay(coachDay);
-  }
-
-  await Promise.all([
-    loadMyProgress(),
-    loadCommunity()
-  ]);
+  await Promise.all([loadMyProgress(),loadCommunity()]);
 }
 function updateCoachVisibility(){
   const pid=$("participantSelect").value;
   const name=participantMap.get(pid);
   const visible=name==="SON";
-
   $("coachCard").classList.toggle("hidden",!visible);
-
-  if(visible){
-    coachDay=Math.min(
-      selectedVerseEnd,
-      OSOTUA_CONFIG.totalVerses
-    );
-
+  if(visible && !$("coachDaySelect").value){
+    coachDay=Math.min(currentDay,OSOTUA_CONFIG.totalDays);
     $("coachDaySelect").value=String(coachDay);
     loadCoachDay(coachDay);
   }
@@ -353,9 +288,9 @@ function resetPracticeRecorder(){
 }
 async function startPracticeRecording(){
   try{
-    practiceStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    practiceStream=await navigator.mediaDevices.getUserMedia({audio:SPEECH_AUDIO_CONSTRAINTS});
     practiceChunks=[];
-    practiceRecorder=new MediaRecorder(practiceStream);
+    practiceRecorder=createSpeechRecorder(practiceStream);
     practiceRecorder.ondataavailable=e=>{if(e.data.size)practiceChunks.push(e.data)};
     practiceRecorder.onstop=()=>{
       practiceBlob=new Blob(practiceChunks,{type:practiceRecorder.mimeType||"audio/webm"});
@@ -364,7 +299,7 @@ async function startPracticeRecording(){
       $("coachPlayPractice").disabled=false;
       $("coachPracticeStatus").textContent="Practice recording ready. Compare it with the Maa model.";
     };
-    practiceRecorder.start();
+    practiceRecorder.start(1000);
     $("coachStartPractice").disabled=true;
     $("coachStopPractice").disabled=false;
     $("coachPracticeStatus").textContent="Practice recording…";
@@ -407,9 +342,7 @@ async function loadSettings(){
     settings=cacheGet("settings");
     if(!settings)throw error;
   }
-  const todaySchedule=scheduleForDate();
-  currentDay=todaySchedule.programDay;
-  currentVerseEnd=todaySchedule.verseEnd;
+  currentDay=settings.auto_advance?calculatedDay(settings.start_date):settings.current_day;
 }
 async function loadContent(){
   try{
@@ -424,56 +357,34 @@ async function loadContent(){
 }
 async function loadSelectedContent(){
   try{
-    selectedVerseEnd=scheduleForDay(selectedDay).verseEnd;
-    const{data,error}=await sb.from("memory_content").select("*").gte("day",1).lte("day",selectedVerseEnd).order("day");
+    const{data,error}=await sb.from("memory_content").select("*").eq("day",selectedDay).single();
     if(error)throw error;
-    if(!data?.length)throw new Error("No verse content is available for this date.");
-    selectedVerseRows=data;
-    selectedContent={
-      day:selectedDay,
-      verse_number:selectedVerseEnd,
-      reference:selectedVerseEnd===1?"Romans 8:1":`Romans 8:1–${selectedVerseEnd}`,
-      maa_text:data.map(x=>x.maa_text||"").filter(Boolean).join(" "),
-      english_text:data.map(x=>x.english_text||"").filter(Boolean).join(" "),
-      korean_text:data.map(x=>x.korean_text||"").filter(Boolean).join(" ")
-    };
+    selectedContent=data;
     cacheSet(`content_${selectedDay}`,data);
   }catch(error){
-    const cached=cacheGet(`content_${selectedDay}`);
-    if(!cached?.length)throw error;
-    selectedVerseRows=cached;
-    selectedContent={
-      day:selectedDay,
-      verse_number:selectedVerseEnd,
-      reference:selectedVerseEnd===1?"Romans 8:1":`Romans 8:1–${selectedVerseEnd}`,
-      maa_text:cached.map(x=>x.maa_text||"").filter(Boolean).join(" "),
-      english_text:cached.map(x=>x.english_text||"").filter(Boolean).join(" "),
-      korean_text:cached.map(x=>x.korean_text||"").filter(Boolean).join(" ")
-    };
+    selectedContent=cacheGet(`content_${selectedDay}`);
+    if(!selectedContent)throw error;
   }
   renderContent();
 }
 function renderContent(){
   if(!selectedContent)return;
-  const selectedSchedule=scheduleForDay(selectedDay);
-  $("dayTitle").textContent=`Day ${selectedDay} · ${selectedSchedule.date} · ${selectedContent.reference}`;
-  renderNumberedVerses("verseText");
+  $("dayTitle").textContent=`Day ${selectedDay} · ${selectedContent.reference}`;
+  $("verseText").textContent=selectedVerseText();
   $("reciteReference").textContent=selectedContent.reference||`Romans 8:${selectedDay}`;
   $("reciteAnswer").textContent="";
   $("reciteAnswer").classList.add("hidden");
   $("revealAfterRecording").disabled=true;
   practiceOverrides.clear();
   renderPracticeText();
-  $("dayModeBadge").textContent=selectedSchedule.isReview?"Weekend Review":`Verse ${selectedVerseEnd}`;
-  $("dayModeBadge").className="mode-badge auto";
+  $("dayModeBadge").textContent=`Official Day ${currentDay}`;
+  $("dayModeBadge").className=`mode-badge ${settings?.auto_advance?"auto":""}`;
   const relation=selectedDay===currentDay
-    ?selectedSchedule.isReview
-      ?`Weekend review: recite all accumulated verses, Romans 8:1–${selectedVerseEnd}. No new verse is added today.`
-      :`Today’s cumulative passage is Romans 8:1–${selectedVerseEnd}.`
+    ?"This is today’s official challenge Day."
     :selectedDay>currentDay
-      ?`Early practice for ${selectedSchedule.date}: Romans 8:1–${selectedVerseEnd}.`
-      :`Review for ${selectedSchedule.date}: Romans 8:1–${selectedVerseEnd}.`;
-  $("practiceDayHelp").textContent=relation+" The date follows this device’s local time zone.";
+      ?`Early practice: this is ${selectedDay-currentDay} Day(s) ahead of the official schedule.`
+      :`Review: this is ${currentDay-selectedDay} Day(s) before the official schedule.`;
+  $("practiceDayHelp").textContent=relation+" You may learn, practice, record, and submit this Day now.";
 }
 async function loadParticipants(){
   try{
@@ -494,10 +405,9 @@ async function initialize(){
   populatePracticeDays();
   try{
     await loadSettings();
-    adminDay=currentVerseEnd;
-    selectedDay=currentDay;
-    localStorage.setItem("osotua_selected_day",String(selectedDay));
-    selectedVerseEnd=scheduleForDay(selectedDay).verseEnd;
+    adminDay=currentDay;
+    const savedDay=Number(localStorage.getItem("osotua_selected_day"));
+    selectedDay=savedDay>=1&&savedDay<=OSOTUA_CONFIG.totalDays?savedDay:currentDay;
     $("practiceDaySelect").value=String(selectedDay);
     await Promise.all([loadContent(),loadSelectedContent(),loadParticipants()]);
     const savedMode=localStorage.getItem("osotua_memory_mode")||"study";
@@ -539,16 +449,16 @@ async function loadMyProgress(){
   const pending=await OSOTUA_QUEUE.all();
   pending.filter(x=>x.participantId===pid).forEach(x=>data.push({day:x.day}));
 
-  const done=[...new Set(data.map(x=>x.day))],set=new Set(done),pct=Math.round(done.length/OSOTUA_CONFIG.totalDays*100);
+  const done=[...new Set(data.map(x=>x.day))],set=new Set(done),pct=Math.round(done.length/50*100);
   let streak=0;
   for(let d=currentDay;d>=1;d--){if(set.has(d))streak++;else break;}
   $("progressName").textContent=participantMap.get(pid);
-  $("progressText").textContent=`${done.length} / ${OSOTUA_CONFIG.totalDays}`;
+  $("progressText").textContent=`${done.length} / 50`;
   $("progressFill").style.width=`${pct}%`;
   $("completedDays").textContent=done.length;
   $("progressPercent").textContent=`${pct}%`;
   $("streakCount").textContent=streak;
-  $("dayGrid").innerHTML=Array.from({length:OSOTUA_CONFIG.totalDays},(_,i)=>i+1)
+  $("dayGrid").innerHTML=Array.from({length:50},(_,i)=>i+1)
     .map(d=>`<button type="button" data-day="${d}" title="Practice Day ${d}" class="day ${set.has(d)?"done":""} ${d===currentDay?"today":""} ${d===selectedDay?"selected":""}">${d}</button>`).join("");
   $("myProgress").classList.remove("hidden");
   $("communityCard").classList.remove("hidden");
@@ -561,9 +471,9 @@ async function startRecording(){
     $("reciteAnswer").textContent="";
     $("reciteAnswer").classList.add("hidden");
     $("revealAfterRecording").disabled=true;
-    stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    stream=await navigator.mediaDevices.getUserMedia({audio:SPEECH_AUDIO_CONSTRAINTS});
     chunks=[];seconds=0;audioBlob=null;$("timer").textContent="00:00";
-    mediaRecorder=new MediaRecorder(stream);
+    mediaRecorder=createSpeechRecorder(stream);
     mediaRecorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
     mediaRecorder.onstop=()=>{
       audioBlob=new Blob(chunks,{type:mediaRecorder.mimeType||"audio/webm"});
@@ -574,16 +484,16 @@ async function startRecording(){
       $("revealAfterRecording").disabled=false;
       $("submitStatus").textContent="Recording ready. Listen first, then check the Maa verse if needed.";
     };
-    mediaRecorder.start();
+    mediaRecorder.start(1000);
     timerId=setInterval(()=>{
       seconds++;
       $("timer").textContent=fmt(seconds);
-      if(seconds>=180)stopRecording();
+      if(seconds>=(OSOTUA_CONFIG.maxRecordingSeconds||1200))stopRecording();
     },1000);
     $("startRecording").disabled=true;
     $("stopRecording").disabled=false;
     $("submitStatus").className="muted";
-    $("submitStatus").textContent="Recording…";
+    $("submitStatus").textContent="Recording… Up to 20 minutes. Speech audio is compressed to save data.";
   }catch(e){
     $("submitStatus").textContent=`Microphone error: ${e.message}`;
   }
@@ -596,9 +506,6 @@ function stopRecording(){
   $("stopRecording").disabled=true;
 }
 async function uploadAndSave(item){
-  const recoveredVerseNumber=Number(item.verseNumber)||scheduleForDay(item.day).verseEnd;
-  item.verseNumber=recoveredVerseNumber;
-  await OSOTUA_QUEUE.update(item);
   let uploaded=item.uploaded||false;
   if(!uploaded){
     const{error}=await sb.storage.from(OSOTUA_CONFIG.bucket).upload(
@@ -614,7 +521,7 @@ async function uploadAndSave(item){
   if(q)throw q;
 
   const payload={
-    verse:recoveredVerseNumber,
+    verse:item.verseNumber,
     recording_path:item.path,
     submitted_at:item.submittedAt
   };
@@ -634,7 +541,7 @@ async function queueCurrentRecording(reason){
     participantId:pid,
     participantName:name,
     day:selectedDay,
-    verseNumber:selectedVerseEnd,
+    verseNumber:selectedContent.verse_number,
     reference:selectedContent.reference,
     blob:audioBlob,
     mimeType:audioBlob.type||"audio/webm",
@@ -669,7 +576,7 @@ async function submitRecording(){
     participantId:pid,
     participantName:name,
     day:selectedDay,
-    verseNumber:selectedVerseEnd,
+    verseNumber:selectedContent.verse_number,
     reference:selectedContent.reference,
     blob:audioBlob,
     mimeType:audioBlob.type||"audio/webm",
@@ -852,7 +759,7 @@ async function uploadReferenceAudio(){
   $("referenceAudioFile").value="";
   $("referenceAudioAdminStatus").textContent="Reference audio uploaded.";
   await loadContent();
-  if(selectedVerseEnd===adminDay)await loadSelectedContent();
+  if(selectedDay===adminDay)await loadSelectedContent();
   await loadAdminReferencePreview();
   if(coachDay===adminDay)await loadCoachDay(coachDay);
 }
@@ -868,13 +775,13 @@ async function removeReferenceAudio(){
   await sb.storage.from(OSOTUA_CONFIG.referenceBucket).remove([path]);
   $("referenceAudioAdminStatus").textContent="Reference audio removed.";
   await loadContent();
-  if(selectedVerseEnd===adminDay)await loadSelectedContent();
+  if(selectedDay===adminDay)await loadSelectedContent();
   await loadAdminReferencePreview();
   if(coachDay===adminDay)await loadCoachDay(coachDay);
 }
 
 async function changeAdminDay(day){
-  adminDay=Math.min(OSOTUA_CONFIG.totalVerses,Math.max(1,Number(day)||adminDay));
+  adminDay=Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,Number(day)||adminDay));
   await loadContent();
   await renderAdmin();
 }
@@ -967,7 +874,7 @@ async function saveSchedule(){
   $("scheduleSaveStatus").textContent=error?error.message:"Schedule saved.";
   if(!error){
     await loadSettings();
-    adminDay=currentVerseEnd;
+    adminDay=currentDay;
     await Promise.all([loadContent(),loadSelectedContent()]);
     await Promise.all([loadCommunity(),loadMyProgress(),loadLeaderboard()]);
     renderAdmin();
@@ -1042,7 +949,7 @@ $("practiceHint").onclick=revealFirstWordHints;
 $("practiceReset").onclick=resetPracticeWords;
 $("revealAfterRecording").onclick=()=>{
   if(mediaRecorder?.state==="recording")return;
-  renderNumberedVerses("reciteAnswer","maa");
+  $("reciteAnswer").textContent=selectedContent?.maa_text||"Maa content not added yet.";
   $("reciteAnswer").classList.remove("hidden");
 };
 
@@ -1115,16 +1022,8 @@ window.addEventListener("online",async()=>{
 window.addEventListener("offline",network);
 
 if("serviceWorker" in navigator){
-  let refreshingForUpdate=false;
-  navigator.serviceWorker.addEventListener("controllerchange",()=>{
-    if(refreshingForUpdate)return;
-    refreshingForUpdate=true;
-    window.location.reload();
-  });
   window.addEventListener("load",()=>{
-    navigator.serviceWorker.register("./sw.js",{updateViaCache:"none"})
-      .then(registration=>registration.update())
-      .catch(console.error);
+    navigator.serviceWorker.register("./sw.js").catch(console.error);
   });
 }
 

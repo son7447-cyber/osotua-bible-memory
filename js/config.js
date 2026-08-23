@@ -4,8 +4,8 @@ const OSOTUA_CONFIG={
   bucket:"recordings",
   referenceBucket:"reference_audio",
   totalDays:50,
-  totalVerses:50,
-  projectStartDate:"2026-07-30",
   adminPin:"0808",
-  cacheVersion:"5.5.3"
+  cacheVersion:"5.4",
+  maxRecordingSeconds:1200,
+  audioBitsPerSecond:32000
 };

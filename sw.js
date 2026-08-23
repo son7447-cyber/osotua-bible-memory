@@ -1,12 +1,11 @@
-const CACHE_NAME="osotua-v5-5-3";
+const CACHE_NAME="osotua-v5-4";
 const APP_SHELL=[
   "./",
   "./index.html",
-  "./css/style.css?v=5.5.3",
-  "./js/config.js?v=5.5.3",
-  "./js/offline.js?v=5.5.3",
-  "./js/app.js?v=5.5.3",
-  "./version.json",
+  "./css/style.css",
+  "./js/config.js",
+  "./js/offline.js",
+  "./js/app.js",
   "./manifest.webmanifest",
   "./offline.html",
   "./assets/icon-192.png",
@@ -46,12 +45,15 @@ self.addEventListener("fetch",event=>{
   }
 
   event.respondWith(
-    fetch(event.request).then(response=>{
-      if(response && (response.status===200 || response.type==="opaque")){
-        const copy=response.clone();
-        caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy));
-      }
-      return response;
-    }).catch(()=>caches.match(event.request))
+    caches.match(event.request).then(cached=>{
+      const networkFetch=fetch(event.request).then(response=>{
+        if(response && (response.status===200 || response.type==="opaque")){
+          const copy=response.clone();
+          caches.open(CACHE_NAME).then(cache=>cache.put(event.request,copy));
+        }
+        return response;
+      }).catch(()=>cached);
+      return cached||networkFetch;
+    })
   );
 });
