@@ -209,10 +209,10 @@ function updateParticipantMemoryModePanel(){
 
   if(subtitle){
     const version=
-      (subtitle.textContent.match(/V[\d.]+/)||["V5.5.3"])[0];
+      (subtitle.textContent.match(/V[\d.]+/)||["V5.5.4"])[0];
 
     subtitle.textContent=
-      `Romans 8 · 50 Day ${
+      `Romans 8 · ${OSOTUA_CONFIG.totalDays} Day ${
         participantMemoryMode==="single"
           ?"One Verse"
           :"Cumulative"
