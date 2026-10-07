@@ -209,7 +209,7 @@ function updateParticipantMemoryModePanel(){
 
   if(subtitle){
     const version=
-      (subtitle.textContent.match(/V[\d.]+/)||["V5.5.6"])[0];
+      (subtitle.textContent.match(/V[\d.]+/)||["V5.5.7"])[0];
 
     subtitle.textContent=
       `Romans 8 · ${OSOTUA_CONFIG.totalDays} Day ${
@@ -911,11 +911,11 @@ function updateCoachVisibility(){
   const pid=
     $("participantSelect").value;
 
-  const name=
-    participantMap.get(pid);
-
-  const visible=
-    name==="SON";
+  // Only these two existing participants use the Korean learning coach.
+  const visible=[
+    "5eac98ca-0b84-4fc7-aa74-e3eb4af57277", // SON
+    "d1289602-3dac-461a-bb82-02f9bf869eff"  // Nempiris Son
+  ].includes(pid);
 
   $("coachCard")
     .classList
