@@ -209,7 +209,7 @@ function updateParticipantMemoryModePanel(){
 
   if(subtitle){
     const version=
-      (subtitle.textContent.match(/V[\d.]+/)||["V5.5.5"])[0];
+      (subtitle.textContent.match(/V[\d.]+/)||["V5.5.6"])[0];
 
     subtitle.textContent=
       `Romans 8 · ${OSOTUA_CONFIG.totalDays} Day ${
@@ -1644,16 +1644,10 @@ async function loadParticipants(){
       )
     );
 
-  $("participantSelect").innerHTML=
-    '<option value="">Select your name</option>'+
-    participants
-      .map(
-        x=>
-          `<option value="${x.id}">
-            ${x.name}
-          </option>`
-      )
-      .join("");
+  $("participantSelect").replaceChildren(new Option("Select your name", ""));
+  participants.forEach(person=>{
+    $("participantSelect").add(new Option(person.name, person.id));
+  });
 }
 
 async function initialize(){
@@ -1667,8 +1661,9 @@ async function initialize(){
     adminDay=
       currentVerseEnd;
 
-    selectedDay=
-      currentDay;
+    selectedDay=Math.min(OSOTUA_CONFIG.totalDays,Math.max(1,
+      Number(localStorage.getItem("osotua_selected_day"))||1
+    ));
 
     localStorage.setItem(
       "osotua_selected_day",
@@ -3388,6 +3383,42 @@ async function saveContent(){
   }
 }
 
+async function registerSelf(event){
+  event.preventDefault();
+  const button=$("selfRegisterButton");
+  const status=$("selfRegistrationStatus");
+  const name=$("selfParticipantName").value.trim().replace(/\s+/g," ");
+  if(!name){status.textContent="Please enter your name.";return;}
+  if(!navigator.onLine){status.textContent="Connect to the internet to register.";return;}
+  button.disabled=true;
+  try{
+    const existing=await sb.from("participants").select("id,name").eq("active",true);
+    if(existing.error)throw existing.error;
+    if(existing.data.some(person=>person.name.trim().replace(/\s+/g," ").toLowerCase()===name.toLowerCase())){
+      status.textContent="This name is already registered. Select your existing name above, or add a surname or nickname for a new participant.";
+      return;
+    }
+    const result=await sb.from("participants").insert({name,active:true}).select("id").single();
+    if(result.error)throw result.error;
+    const pid=result.data.id;
+    localStorage.setItem("osotua_participant",pid);
+    localStorage.setItem("osotua_selected_day","1");
+    selectedDay=1;
+    selectedVerseEnd=1;
+    await loadParticipants();
+    $("participantSelect").value=pid;
+    $("selfParticipantName").value="";
+    status.textContent="Welcome! Your name is registered. Start with Day 1.";
+    await $("participantSelect").onchange();
+    await selectPracticeDay(1);
+    setMode("study");
+  }catch(error){
+    status.textContent="Registration could not finish: "+error.message;
+  }finally{
+    button.disabled=false;
+  }
+}
+
 async function addParticipant(){
   if(!navigator.onLine){
     return alert(
@@ -3761,6 +3792,8 @@ $("uploadReferenceAudio").onclick=
 
 $("removeReferenceAudio").onclick=
   removeReferenceAudio;
+
+$("selfRegistrationForm").onsubmit=registerSelf;
 
 $("addParticipant").onclick=
   addParticipant;
