@@ -209,7 +209,7 @@ function updateParticipantMemoryModePanel(){
 
   if(subtitle){
     const version=
-      (subtitle.textContent.match(/V[\d.]+/)||["V5.5.4"])[0];
+      (subtitle.textContent.match(/V[\d.]+/)||["V5.5.5"])[0];
 
     subtitle.textContent=
       `Romans 8 · ${OSOTUA_CONFIG.totalDays} Day ${
@@ -809,7 +809,7 @@ function populatePracticeDays(){
 
       return `
         <option value="${day}">
-          Day ${day} · ${x.date} · ${label}
+          Day ${day} · ${label}
         </option>
       `;
 
@@ -1423,7 +1423,7 @@ async function loadSelectedContent(){
 
     if(!data?.length){
       throw new Error(
-        "No verse content is available for this date."
+        "No verse content is available for this day."
       );
     }
 
@@ -1525,7 +1525,7 @@ function renderContent(){
     );
 
   $("dayTitle").textContent=
-    `Day ${selectedDay} · ${selectedSchedule.date} · ${selectedContent.reference}`;
+    `Day ${selectedDay} · ${selectedContent.reference}`;
 
   renderNumberedVerses(
     "verseText"
@@ -1562,24 +1562,10 @@ function renderContent(){
     $("dayModeBadge").className=
       "mode-badge auto";
 
-    const relation=
-      selectedDay===currentDay
-
-        ?selectedSchedule.isReview
-
-          ?`Weekend review: practice Romans 8:${selectedVerseEnd} again. No new verse is added today.`
-
-          :`Today’s verse is Romans 8:${selectedVerseEnd}.`
-
-        :selectedDay>currentDay
-
-          ?`Early practice for ${selectedSchedule.date}: Romans 8:${selectedVerseEnd}.`
-
-          :`Review for ${selectedSchedule.date}: Romans 8:${selectedVerseEnd}.`;
-
     $("practiceDayHelp").textContent=
-      relation+
-      " The date follows this device’s local time zone.";
+      selectedSchedule.isReview
+        ?`Day ${selectedDay} · Review Romans 8:${selectedVerseEnd}.`
+        :`Day ${selectedDay} · Romans 8:${selectedVerseEnd}.`;
 
   }else{
 
@@ -1591,24 +1577,11 @@ function renderContent(){
     $("dayModeBadge").className=
       "mode-badge auto";
 
-    const relation=
-      selectedDay===currentDay
-
-        ?selectedSchedule.isReview
-
-          ?`Weekend review: recite all accumulated verses, Romans 8:1–${selectedVerseEnd}. No new verse is added today.`
-
-          :`Today’s cumulative passage is Romans 8:1–${selectedVerseEnd}.`
-
-        :selectedDay>currentDay
-
-          ?`Early practice for ${selectedSchedule.date}: Romans 8:1–${selectedVerseEnd}.`
-
-          :`Review for ${selectedSchedule.date}: Romans 8:1–${selectedVerseEnd}.`;
-
     $("practiceDayHelp").textContent=
-      relation+
-      " The date follows this device’s local time zone.";
+      selectedSchedule.isReview
+        ?`Day ${selectedDay} · Review Romans 8:1–${selectedVerseEnd}.`
+        :`Day ${selectedDay} · Romans 8:1–${selectedVerseEnd}.`;
+
   }
 
   updateParticipantMemoryModePanel();
